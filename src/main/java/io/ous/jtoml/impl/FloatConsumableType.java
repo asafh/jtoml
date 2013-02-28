@@ -4,6 +4,11 @@ import io.ous.jtoml.ParseException;
 
 import java.util.regex.Matcher;
 
+/**
+ * A float consumable type of 64bit precision (Double)
+ * @author Asafh
+ *
+ */
 final class FloatConsumableType extends RegexConsumableType<Double> {
 	FloatConsumableType() {
 		super("^([-]?\\d+\\.\\d+)");

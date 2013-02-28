@@ -4,6 +4,12 @@ import java.io.BufferedReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * This class holds common logic for ConsumableTypes that identify values by regexes and acts on the matching group.
+ * @author Asafh
+ *
+ * @param <T>
+ */
 abstract class RegexConsumableType<T> extends ConsumableType<T> {
 	private final Pattern pattern;
 	public RegexConsumableType(String regex) {

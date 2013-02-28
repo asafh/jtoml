@@ -2,6 +2,12 @@ package io.ous.jtoml.impl;
 
 import java.io.BufferedReader;
 
+/**
+ * Consumes a constant String from the input and returns a constant value
+ * @author Asafh
+ *
+ * @param <T>
+ */
 class ConstantConsumableType<T> extends ConsumableType<T> {
 	private final T value;
 	private final String constant;
