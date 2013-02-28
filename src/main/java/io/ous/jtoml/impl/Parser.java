@@ -1,20 +1,13 @@
 package io.ous.jtoml.impl;
 
 import io.ous.jtoml.ParseException;
+import io.ous.jtoml.Toml;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
-import java.nio.charset.Charset;
 
-public class Parser implements Closeable {
+public class Parser {
 	private static final char ASSIGNMENT_DELIMITOR = '=';
 	
 	private static final char KEYGROUP_START = '[';
@@ -27,15 +20,6 @@ public class Parser implements Closeable {
 	private KeyGroup currentKeygroup;
 	
 
-	public Parser(String config) {
-		this(new StringReader(config));
-	}
-	public Parser(File file) throws FileNotFoundException {
-		this(new FileInputStream(file));
-	}
-	public Parser(InputStream input) throws FileNotFoundException {
-		this(new InputStreamReader(input, Charset.forName("UTF-8"))); //Force UTF-8
-	}
 	public Parser(Reader reader) {
 		this(reader,new Toml());
 	}
@@ -103,7 +87,7 @@ public class Parser implements Closeable {
 		KeyGroup createIn = buildPath(currentKeygroup, parts[0]); //Values are relative to the current keygroup
 		
 		String name = parts[1];
-		if(createIn.hasKey(name)) {
+		if(createIn.hasLocalKey(name)) {
 			throw new ParseException("Cannot overwrite key "+name);
 		}
 		
@@ -115,7 +99,7 @@ public class Parser implements Closeable {
 			throw new ParseException("Extra characters at "+remaining);
 		}
 		
-		createIn.set(name, value.getValue());
+		createIn.setLocalValue(name, value.getValue());
 	}
 	
 	private void onKeygroup(String line) {
@@ -130,7 +114,7 @@ public class Parser implements Closeable {
 		KeyGroup createIn = buildPath(output, parts[0]); //Keygroups are always relative to the root
 		
 		String name = parts[1];
-		if(createIn.hasKey(name)) {
+		if(createIn.hasLocalKey(name)) {
 			throw new ParseException("Cannot overwrite key "+name);
 		}
 		currentKeygroup = createIn.assertKeygroup(name);
