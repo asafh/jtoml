@@ -1,7 +1,5 @@
 package io.ous.jtoml.impl;
 
-import io.ous.jtoml.Toml;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
