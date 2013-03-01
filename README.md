@@ -8,7 +8,7 @@ Using jtoml
 
 ## Parsing
 The JToml class has methods for parsing Toml from files, input streams, readers are just strings  
-jtoml does not need the entire toml in memory while parsing,
+jtoml does not load the entire toml file while parsing,
 but reads it while parsing only keeping in memory the current line being read
 
 ```java
