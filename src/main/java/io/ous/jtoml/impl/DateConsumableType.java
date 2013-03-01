@@ -11,7 +11,7 @@ import java.util.Date;
  *
  */
 final class DateConsumableType extends ConsumableType<Date> {
-	private static final String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ssz";
+	private static final String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 	private static final int ISO8601_FORMAT_LENGTH = ISO8601_FORMAT.replaceAll("'", "").length(); //No quotes
 	private static final ThreadLocal<DateFormat> ISO8601DateFormat = new ThreadLocal<DateFormat>() {
 		protected DateFormat initialValue() {
@@ -24,7 +24,7 @@ final class DateConsumableType extends ConsumableType<Date> {
 			return null;
 		}
 		String relevant = current.substring(0,ISO8601_FORMAT_LENGTH);
-		relevant = relevant.replace("Z","+0000");
+		relevant = relevant.replace("Z","+0000"); //SimpleDateFormat does not allow Z to be included instead of a timezone, see http://stackoverflow.com/a/2202300/777203
 		try {
 			Date date = ISO8601DateFormat.get().parse(relevant);
 			return new ConsumedValue<Date>(date, current, ISO8601_FORMAT_LENGTH);

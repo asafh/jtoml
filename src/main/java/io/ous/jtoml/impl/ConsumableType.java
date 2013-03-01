@@ -41,13 +41,12 @@ public abstract class ConsumableType<T> {
 	 * The set of ConsumableTypes available by the order in which consuming will be attempted
 	 */
 	private static ConsumableType<?>[] TYPES = new ConsumableType<?>[] {
-		new ConstantConsumableType<Boolean>(Boolean.TRUE,"true"),
-		new ConstantConsumableType<Boolean>(Boolean.FALSE,"false"),
-		new DateConsumableType(),
-		new FloatConsumableType(),
-		new IntegerConsumableType(),
-		
-		new StringConsumableType(),
-		new ArrayConsumableType()
+		new ConstantConsumableType<Boolean>(Boolean.TRUE,"true"), //Constants are the fastest
+		new ConstantConsumableType<Boolean>(Boolean.FALSE,"false"), //Constants are the fastest
+		new StringConsumableType(), //String identifies by first character
+		new ArrayConsumableType(), //Array identifies by first character
+		new DateConsumableType(), //Date must be before Integer otherwise Integer will consume the year number.
+		new FloatConsumableType(), //Float must be before Integer otherwise Integer will consume the first part
+		new IntegerConsumableType()
 	};
 }
