@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Jtoml by asafh</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Jtoml</h1>
+        <p>TOML Parser for Java</p>
+
+        <p class="view"><a href="https://github.com/asafh/jtoml">View the Project on GitHub <small>asafh/jtoml</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/asafh/jtoml/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/asafh/jtoml/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/asafh/jtoml">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>jtoml</h1>
+
+<p><a href="https://github.com/mojombo/toml">TOML</a> Parser for Java</p>
+
+<h2>Using jtoml</h2>
+
+<h2>Parsing</h2>
+
+<p>The JToml class has methods for parsing Toml from files, input streams, readers are just strings<br>
+jtoml does not need the entire toml in memory while parsing,
+but reads it while parsing only keeping in memory the current line being read</p>
+
+<div class="highlight"><pre><span class="n">Toml</span> <span class="n">toml</span> <span class="o">=</span> <span class="n">JToml</span><span class="o">.</span><span class="na">parseString</span><span class="o">(</span><span class="s">"foo = 42"</span><span class="o">);</span> <span class="c1">//Parsing a String</span>
+<span class="n">toml</span> <span class="o">=</span> <span class="n">JToml</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="n">ExampleTomlTest</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getResourceAsStream</span><span class="o">(</span><span class="s">"/example.toml"</span><span class="o">));</span> <span class="c1">//From an input stream</span>
+<span class="n">toml</span> <span class="o">=</span> <span class="n">JToml</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="s">"/example.toml"</span><span class="o">));</span> <span class="c1">//From a file</span>
+<span class="n">toml</span> <span class="o">=</span> <span class="n">JToml</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="k">new</span> <span class="n">StringReader</span><span class="o">(</span><span class="s">"foo = 42"</span><span class="o">));</span> <span class="c1">// From a reader</span>
+</pre></div>
+
+<h2>Getting values</h2>
+
+<p>Parsing a TOML file returns a Toml instance, which is the root keygroup.<br>
+KeyGroups have methods to return local values (directly in this keygroup)
+or a relative value (e.g. getting "y.z." from keygroup "x" will return the value for "x.y.z").  </p>
+
+<div class="highlight"><pre><span class="n">toml</span><span class="o">.</span><span class="na">getValue</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// Object</span>
+<span class="n">toml</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// String</span>
+<span class="n">toml</span><span class="o">.</span><span class="na">getBoolean</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// Boolean</span>
+<span class="n">toml</span><span class="o">.</span><span class="na">getDate</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// Date</span>
+<span class="n">toml</span><span class="o">.</span><span class="na">getDouble</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// Double</span>
+<span class="n">toml</span><span class="o">.</span><span class="na">getLong</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// Long</span>
+<span class="n">toml</span><span class="o">.</span><span class="na">getList</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// List&lt;Object&gt;</span>
+<span class="n">toml</span><span class="o">.</span><span class="na">getKeyGroup</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// KeyGroup</span>
+
+<span class="n">toml</span><span class="o">.</span><span class="na">getLocalValue</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">// returns the value for "foo", dots are not allowed</span>
+<span class="n">toml</span><span class="o">.</span><span class="na">getLocalXXX</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span> <span class="c1">//....</span>
+
+</pre></div>
+
+<h2>Mapping to POJO</h2>
+
+<p>You can create a POJO class instance, filling it with values for a given keygroup.<br>
+Any field that isn't a type of String, Date, List, Boolean, Double, Long is assumed to be a nested POJO type and is
+recursively mapped (it's value in the toml should be a keygroup).</p>
+
+<div class="highlight"><pre><span class="p">[</span><span class="n">foo</span><span class="p">]</span>
+<span class="n">stringKey</span><span class="o">=</span><span class="s">"a"</span>
+<span class="n">longKey</span><span class="o">=</span><span class="mi">42</span>
+<span class="n">doubleKey</span><span class="o">=</span><span class="mf">13.37</span>
+<span class="n">booleanKey</span><span class="o">=</span><span class="kc">true</span>
+<span class="n">listKey</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="p">[</span><span class="n">foo</span><span class="p">.</span><span class="n">bar</span><span class="p">]</span>
+<span class="n">bazz</span><span class="o">=</span><span class="s">"Hello"</span>
+<span class="n">dummy</span><span class="o">=</span><span class="mi">459</span>
+</pre></div>
+
+<p>Retrieving </p>
+
+<div class="highlight"><pre><span class="kd">class</span> <span class="nc">Foo</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">stringKey</span><span class="o">;</span>
+    <span class="n">Long</span> <span class="n">longKey</span><span class="o">;</span>
+    <span class="n">Double</span> <span class="n">doubleKey</span><span class="o">;</span>
+    <span class="n">Boolean</span> <span class="n">booleanKey</span><span class="o">;</span>
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">listKey</span><span class="o">;</span>
+    <span class="n">Bar</span> <span class="n">bar</span><span class="o">;</span>
+    <span class="n">Boolean</span> <span class="n">awesome</span><span class="o">;</span>
+<span class="o">}</span>
+<span class="kd">class</span> <span class="nc">Bar</span> <span class="o">{</span>
+  <span class="n">String</span> <span class="n">bazz</span><span class="o">;</span>
+  <span class="n">Long</span> <span class="n">dummy</span><span class="o">;</span>
+<span class="o">}</span>
+<span class="n">Foo</span> <span class="n">foo</span> <span class="o">=</span> <span class="n">toml</span><span class="o">.</span><span class="na">getKeyGroup</span><span class="o">(</span><span class="s">"foo"</span><span class="o">).</span><span class="na">asObject</span><span class="o">(</span><span class="n">Foo</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+</pre></div>
+
+<h2>License</h2>
+
+<p><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a></p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/asafh">asafh</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-38594778-2");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
