@@ -42,7 +42,7 @@ public class KeyGroup {
 		return localValues.containsKey(name);
 	}
 	public void setLocalValue(String name, Object value) {
-		validateLocal(name);
+		validateLocalKey(name);
 		localValues.put(name, value);
 	}
 	/**
@@ -51,7 +51,7 @@ public class KeyGroup {
 	 * @return
 	 */
 	public Object getLocalValue(String name) {
-		validateLocal(name);
+		validateLocalKey(name);
 		return "".equals(name) ? this : localValues.get(name);
 	}
 	/**
@@ -77,33 +77,11 @@ public class KeyGroup {
 		return in.getLocalValue(parts[1]);
 	}
 	
-	public String getLocalString(String name) throws ClassCastException {
-		return (String) getLocalValue(name);
-	}
-	public Long getLocalLong(String name) throws ClassCastException {
-		return (Long) getLocalValue(name);
-	}
-	public Double getLocalDouble(String name) throws ClassCastException {
-		return (Double) getLocalValue(name);
-	}
-	public Date getLocalDate(String name) throws ClassCastException {
-		return (Date) getLocalValue(name);
-	}
-	public List<?> getLocalList(String name) throws ClassCastException {
-		return (List<?>) getLocalValue(name);
-	}
-	public Boolean getLocalBoolean(String name) throws ClassCastException {
-		return (Boolean) getLocalValue(name);
-	}
-	public KeyGroup getLocalKeyGroup(String name) throws ClassCastException {
-		return (KeyGroup) getLocalValue(name);
-	}
-	
 	/**
 	 * Throws an IllegalArgumentException if <code>name</code> is not a local name (i.e. contains a dot)
 	 * @param name
 	 */
-	private void validateLocal(String name) {
+	private void validateLocalKey(String name) {
 		if(Utils.containsCharacter(name, Path.KEYGROUP_DELIMITER)) {
 			throw new IllegalArgumentException("Local key cannot contain a dot");
 		}
@@ -131,13 +109,11 @@ public class KeyGroup {
 	
 	@Override
 	public String toString() {
-		//return "{\""+getPath()+"\": \""+this.localValues+"\"}";
-//		return getPath() +"="+ localValues.toString();
 		return "["+getPath()+"]";
 	}
 	
 	/**
-	 * Preorder traversal on this keygroup and all subkeys
+	 * Perform a traversal on this keygroup and all subkeys
 	 * @param visitor
 	 */
 	public void traverse(TomlVisitor visitor) {
@@ -176,6 +152,29 @@ public class KeyGroup {
 	public KeyGroup getKeyGroup(String name) throws ClassCastException {
 		return (KeyGroup) getValue(name);
 	}
+	
+	public String getLocalString(String name) throws ClassCastException {
+		return (String) getLocalValue(name);
+	}
+	public Long getLocalLong(String name) throws ClassCastException {
+		return (Long) getLocalValue(name);
+	}
+	public Double getLocalDouble(String name) throws ClassCastException {
+		return (Double) getLocalValue(name);
+	}
+	public Date getLocalDate(String name) throws ClassCastException {
+		return (Date) getLocalValue(name);
+	}
+	public List<?> getLocalList(String name) throws ClassCastException {
+		return (List<?>) getLocalValue(name);
+	}
+	public Boolean getLocalBoolean(String name) throws ClassCastException {
+		return (Boolean) getLocalValue(name);
+	}
+	public KeyGroup getLocalKeyGroup(String name) throws ClassCastException {
+		return (KeyGroup) getLocalValue(name);
+	}
+	
 	/**
 	 * Returns an instance of <code>type</code> filled by the properties here
 	 * @param type
