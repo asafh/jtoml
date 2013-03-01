@@ -12,9 +12,11 @@ import java.io.IOException;
  * @author Asafh
  *
  * @param <T>
+ * @throws IOException if an IO error occurred while trying to read more lines
+ * @throws ParseException if the value is deemed to be of this type but could not be parsed properly
  */
 public abstract class ConsumableType<T> {
-	public abstract ConsumedValue<T> attemptConsume(String current, BufferedReader reader) throws IOException;
+	public abstract ConsumedValue<T> attemptConsume(String current, BufferedReader reader) throws IOException, ParseException;
 	
 	
 	/**

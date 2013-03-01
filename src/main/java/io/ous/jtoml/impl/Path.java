@@ -1,5 +1,7 @@
 package io.ous.jtoml.impl;
 
+import java.util.regex.Pattern;
+
 /**
  * Utility class for handling keys paths
  * @author Asafh
@@ -7,7 +9,7 @@ package io.ous.jtoml.impl;
 public class Path {
 	private Path() {}
 	public static final char KEYGROUP_DELIMITER = '.';
-	private static final String KEYGROUP_DELIMITER_REGEX = "[\\.]+";
+	private static final Pattern KEYGROUP_DELIMITER_PATTERN = Pattern.compile("[\\.]+");
 	public static String join(String... items) {
 		StringBuilder bld = new StringBuilder();
 		for(String item : items) {
@@ -29,7 +31,7 @@ public class Path {
 	 */
 	public static String[] split(String qualifiedKey) {
 		qualifiedKey = Utils.trim(qualifiedKey);
-		return qualifiedKey.split(KEYGROUP_DELIMITER_REGEX);
+		return KEYGROUP_DELIMITER_PATTERN.split(qualifiedKey);
 	}
 	/**
 	 * Returns a String[] of size two, arr[1] containing the last component in this key,

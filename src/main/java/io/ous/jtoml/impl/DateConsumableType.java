@@ -20,7 +20,7 @@ final class DateConsumableType extends ConsumableType<Date> {
 	};
 	@Override
 	public ConsumedValue<Date> attemptConsume(String current, BufferedReader reader) {
-		if(ISO8601_FORMAT_LENGTH > current.length()) {
+		if(current.length() < ISO8601_FORMAT_LENGTH) {
 			return null;
 		}
 		String relevant = current.substring(0,ISO8601_FORMAT_LENGTH);

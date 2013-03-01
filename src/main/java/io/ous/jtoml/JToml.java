@@ -15,18 +15,18 @@ import java.nio.charset.Charset;
 
 public class JToml {
     
-    public static Toml parseToml(File file) throws FileNotFoundException, IOException {
-    	return parseToml(new FileInputStream(file));
+    public static Toml parse(File file) throws FileNotFoundException, IOException {
+    	return parse(new FileInputStream(file));
 	}
-    public static Toml parseToml(InputStream input) throws FileNotFoundException, IOException {
-    	return parseToml(new InputStreamReader(input, Charset.forName("UTF-8"))); //Force UTF-8
-	}
-    
-    public static Toml parseToml(String config) throws IOException {
-    	return parseToml(new StringReader(config));
+    public static Toml parse(InputStream input) throws FileNotFoundException, IOException {
+    	return parse(new InputStreamReader(input, Charset.forName("UTF-8"))); //Force UTF-8
 	}
     
-    public static Toml parseToml(Reader reader) throws IOException {
+    public static Toml parseString(String config) throws IOException {
+    	return parse(new StringReader(config));
+	}
+    
+    public static Toml parse(Reader reader) throws IOException {
     	return new Parser(reader).parse();   	
     }
 }

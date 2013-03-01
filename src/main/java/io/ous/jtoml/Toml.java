@@ -5,7 +5,7 @@ import java.util.Map;
 
 import io.ous.jtoml.impl.KeyGroup;
 import io.ous.jtoml.impl.Path;
-import io.ous.jtoml.impl.TomlTraverser;
+import io.ous.jtoml.impl.TomlVisitor;
 
 /**
  * The root Keygroup, a Toml configuration file
@@ -27,7 +27,7 @@ public class Toml extends KeyGroup {
 	 */
 	public Map<String,Object> toExplodedMap() {
 		final Map<String, Object> map = new HashMap<String, Object>();
-		this.traverse(new TomlTraverser() {
+		this.traverse(new TomlVisitor() {
 			@SuppressWarnings("unchecked")
 			private void setValue(KeyGroup in, String localName, Object value) {
 				String fullpath = Path.join(in.getPath(),localName);
@@ -69,7 +69,7 @@ public class Toml extends KeyGroup {
 	 */
 	public Map<String,Object> toMap() {
 		final Map<String, Object> map = new HashMap<String, Object>();
-		this.traverse(new TomlTraverser() {
+		this.traverse(new TomlVisitor() {
 			private void setValue(KeyGroup in, String relativePath, Object value) {
 				String fullpath = Path.join(in.getPath(),relativePath);
 				map.put(fullpath, value);

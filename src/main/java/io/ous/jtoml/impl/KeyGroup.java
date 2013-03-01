@@ -74,7 +74,7 @@ public class KeyGroup {
 				throw new IllegalArgumentException(qualifiedKey+" goes through a non-keygroup value at "+Path.join(in.getPath(),child));
 			}
 		}
-		return in.getValue(parts[1]);
+		return in.getLocalValue(parts[1]);
 	}
 	
 	public String getLocalString(String name) throws ClassCastException {
@@ -89,7 +89,7 @@ public class KeyGroup {
 	public Date getLocalDate(String name) throws ClassCastException {
 		return (Date) getLocalValue(name);
 	}
-	public List<?> getLocalArray(String name) throws ClassCastException {
+	public List<?> getLocalList(String name) throws ClassCastException {
 		return (List<?>) getLocalValue(name);
 	}
 	public Boolean getLocalBoolean(String name) throws ClassCastException {
@@ -140,7 +140,7 @@ public class KeyGroup {
 	 * Preorder traversal on this keygroup and all subkeys
 	 * @param visitor
 	 */
-	public void traverse(TomlTraverser visitor) {
+	public void traverse(TomlVisitor visitor) {
 		visitor.visitPreorderKeygroup(this);
 		for(Map.Entry<String, Object> entry : localValues.entrySet()) {
 			String name = entry.getKey();
@@ -167,7 +167,7 @@ public class KeyGroup {
 	public Date getDate(String name) throws ClassCastException {
 		return (Date) getValue(name);
 	}
-	public List<?> getArray(String name) throws ClassCastException {
+	public List<?> getList(String name) throws ClassCastException {
 		return (List<?>) getValue(name);
 	}
 	public Boolean getBoolean(String name) throws ClassCastException {
@@ -175,5 +175,13 @@ public class KeyGroup {
 	}
 	public KeyGroup getKeyGroup(String name) throws ClassCastException {
 		return (KeyGroup) getValue(name);
+	}
+	/**
+	 * Returns an instance of <code>type</code> filled by the properties here
+	 * @param type
+	 * @return
+	 */
+	public<T> T asObject(Class<T> type) {
+		return ObjectDeserializer.getInstance().create(type, this);
 	}
 }

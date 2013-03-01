@@ -14,7 +14,7 @@ import org.junit.Test;
 public class AdhocTest {
     @Test
     public void testApp() throws FileNotFoundException, IOException {
-        Toml toml = JToml.parseToml(new File("D:\\Workspaces\\config\\jtoml\\src\\test\\resources\\example.toml"));
+        Toml toml = JToml.parse(new File("D:\\Workspaces\\config\\jtoml\\src\\test\\resources\\example.toml"));
         System.out.println(toml);
         System.out.println("=====================================");
         Map<String, Object> map = toml.toExplodedMap();
