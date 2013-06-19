@@ -4,11 +4,23 @@
 
   <groupId>io.ous</groupId>
   <artifactId>jtoml</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
 
   <name>jtoml</name>
-  <url>http://maven.apache.org</url>
+  <description>Java Parser for TOML</description>
+  <url>https://github.com/asafh/jtoml</url>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <url>git@github.com:asafh/jtoml.git</url>
+    </scm>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
