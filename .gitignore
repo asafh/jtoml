@@ -5,3 +5,4 @@
 /.settings
 jtoml.iml
 .idea/
+/release.properties
