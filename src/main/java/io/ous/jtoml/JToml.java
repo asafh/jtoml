@@ -1,7 +1,6 @@
 package io.ous.jtoml;
 
 import io.ous.jtoml.impl.Parser;
-import io.ous.jtoml.Toml;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,9 +21,13 @@ public class JToml {
     	return parse(new InputStreamReader(input, Charset.forName("UTF-8"))); //Force UTF-8
 	}
     
-    public static Toml parseString(String config) throws IOException {
-    	return parse(new StringReader(config));
-	}
+    public static Toml parseString(String config) {
+        try {
+            return parse(new StringReader(config));
+        } catch (IOException ex) {
+            throw new IllegalStateException("StringReader should never throw an IOException",ex);
+        }
+    }
     
     public static Toml parse(Reader reader) throws IOException {
     	return new Parser(reader).parse();   	
