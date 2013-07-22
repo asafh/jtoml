@@ -42,6 +42,9 @@ public class ObjectDeserializer {
 		if(PRIMITIVES.contains(type)) {
 			return type.cast(containingGroup.getLocalValue(keyName));
 		}
+        else if(type.isEnum()) {
+            return (T) containingGroup.getLocalAsEnum(keyName, type.asSubclass(Enum.class));
+        }
 		else {
 			KeyGroup target = containingGroup.getLocalKeyGroup(keyName);
 			return target == null ? null : create(type,target);
@@ -74,4 +77,28 @@ public class ObjectDeserializer {
 			throw new IllegalStateException("Could not instantiate "+type,e);
 		}
 	}
+    /**
+     * Returns an instance of the enum T corresponding to the value given
+     * If the value is null, null will be returned
+     * If the value is a long, the enum constant with that ordinal is returned
+     * If the value is a String, the enum constant is returned using the enum's valueOf method.
+     * @param type the class of the enum type
+     * @param value the value to convert to the enum
+     * @param <T> the enum type
+     * @return
+     */
+    public <T extends Enum<T>> T toEnum(Class<T> type, Object value) {
+        if(value == null) {
+            return null;
+        }
+        if(value instanceof Long) {
+            int ordinal = ((Long) value).intValue();
+            return type.getEnumConstants()[ordinal];
+        }
+        if(value instanceof String) {
+            return Enum.valueOf(type,(String)value);
+        }
+
+        throw new IllegalArgumentException("Value is neither String or Long but "+value.getClass().getCanonicalName());
+    }
 }

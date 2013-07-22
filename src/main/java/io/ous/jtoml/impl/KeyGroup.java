@@ -152,6 +152,19 @@ public class KeyGroup {
 	public KeyGroup getKeyGroup(String name) throws ClassCastException {
 		return (KeyGroup) getValue(name);
 	}
+
+    /**
+     *
+     * @param name
+     * @param type
+     * @param <T>
+     * @return
+     * @see KeyGroup#getLocalAsEnum(String, Class)
+     */
+    public <T extends Enum<T>> T getAsEnum(String name, Class<T> type) {
+        Object value = getValue(name);
+        return ObjectDeserializer.getInstance().toEnum(type,value);
+    }
 	
 	public String getLocalString(String name) throws ClassCastException {
 		return (String) getLocalValue(name);
@@ -174,6 +187,23 @@ public class KeyGroup {
 	public KeyGroup getLocalKeyGroup(String name) throws ClassCastException {
 		return (KeyGroup) getLocalValue(name);
 	}
+
+    /**
+     * Returns an instance of the enum T corresponding to the value in the local key <i>name</i>
+     * If the local value is null, null will be returned
+     * If the local value is a long, the enum constant with that ordinal is returned
+     * If the local value is a String, the enum constant is returned using the enum's valueOf method.
+     * @param name
+     * @param type
+     * @param <T>
+     * @return
+     * @throws IllegalArgumentException if the value is neither of type String or Integer
+     * @see ObjectDeserializer#toEnum(Class, Object)
+     */
+    public <T extends Enum<T>> T getLocalAsEnum(String name, Class<T> type) {
+        Object value = getLocalValue(name);
+        return ObjectDeserializer.getInstance().toEnum(type,value);
+    }
 	
 	/**
 	 * Returns an instance of <code>type</code> filled by the properties here

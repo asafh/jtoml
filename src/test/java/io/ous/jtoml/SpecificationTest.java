@@ -102,7 +102,7 @@ public class SpecificationTest {
 	@Test
 	public void testCustomObject() throws IOException {
 		Toml toml = JToml.parseString("[foo]\nstringKey=\"a\"\nlongKey=42\ndoubleKey=13.37\n" + //
-				"booleanKey=true\nlistKey=[1,2,3]\n[foo.bar]\nbazz=\"Hello\"\ndummy=459");
+				"booleanKey=true\nlistKey=[1,2,3]\n[foo.bar]\nbazz=\"Hello\"\ndummy=459\neVal=\"Lorem\"");
 		Foo foo = toml.getKeyGroup("foo").asObject(Foo.class);
 		Assert.assertEquals("a", foo.stringKey);
 		Assert.assertEquals(Long.valueOf(42), foo.longKey);
@@ -111,11 +111,32 @@ public class SpecificationTest {
 		Assert.assertEquals(Arrays.asList(1L, 2L, 3L), foo.listKey);
 		Assert.assertEquals("Hello", foo.bar.bazz);
 		Assert.assertEquals(Long.valueOf(459), foo.bar.dummy);
+
+        Assert.assertEquals(null, foo.bar.eNull);
+        Assert.assertEquals(TestEnum.Lorem, foo.bar.eVal);
+
 		// test no root group
 		toml = JToml.parseString("stringKey=\"a\"\nlongKey=42\ndoubleKey=13.37\n" + //
 				"booleanKey=true\nlistKey=[1,2,3]\n[bar]\nbazz=\"Hello\"\ndummy=459");
 		Assert.assertEquals(foo.toString(), toml.asObject(Foo.class).toString());
 	}
+    public static enum TestEnum {
+        Bla,
+        Dog,
+        Some,
+        Lorem,
+        Ipsum
+    }
+    @Test
+    public void testEnum() throws IOException {
+        Toml toml = JToml.parseString("[foo]\nstringKey=\"Dog\"\nintVal=3");
+
+        TestEnum value = toml.getAsEnum("foo.stringKey", TestEnum.class);
+        Assert.assertEquals(TestEnum.Dog, value);
+
+        TestEnum intVal = toml.getKeyGroup("foo").getLocalAsEnum("intVal", TestEnum.class);
+        Assert.assertEquals(TestEnum.values()[3], intVal);
+    }
 
 	/**
 	 * Simple class tested above.
@@ -123,6 +144,8 @@ public class SpecificationTest {
 	public static class Bar {
 		String bazz;
 		Long dummy;
+        TestEnum eVal;
+        TestEnum eNull;
 
 		@Override
 		public String toString() {
@@ -145,3 +168,4 @@ public class SpecificationTest {
 		}
 	}
 }
+
