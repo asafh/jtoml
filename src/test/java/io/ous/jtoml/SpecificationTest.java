@@ -82,7 +82,7 @@ public class SpecificationTest {
 	@Test
 	public void testLocalsAsMap() throws IOException {
 		Toml toml = JToml.parseString("[foo]\nbar = true\nbaz = false");
-		Map<String, Object> map = toml.getKeyGroup("foo").toMap();
+		Map<String, Object> map = toml.getTomlTable("foo").toMap();
 		Assert.assertTrue(map.containsKey("bar") && map.get("bar").equals(Boolean.TRUE));
 		Assert.assertTrue(map.containsKey("baz") && map.get("baz").equals(Boolean.FALSE));
 	}
@@ -103,7 +103,7 @@ public class SpecificationTest {
 	public void testCustomObject() throws IOException {
 		Toml toml = JToml.parseString("[foo]\nstringKey=\"a\"\nlongKey=42\ndoubleKey=13.37\n" + //
 				"booleanKey=true\nlistKey=[1,2,3]\n[foo.bar]\nbazz=\"Hello\"\ndummy=459\neVal=\"Lorem\"");
-		Foo foo = toml.getKeyGroup("foo").asObject(Foo.class);
+		Foo foo = toml.getTomlTable("foo").asObject(Foo.class);
 		Assert.assertEquals("a", foo.stringKey);
 		Assert.assertEquals(Long.valueOf(42), foo.longKey);
 		Assert.assertEquals(Double.valueOf(13.37), foo.doubleKey, 0.00001d);
@@ -134,7 +134,7 @@ public class SpecificationTest {
         TestEnum value = toml.getAsEnum(TestEnum.class, "foo","stringKey");
         Assert.assertEquals(TestEnum.Dog, value);
 
-        TestEnum intVal = toml.getKeyGroup("foo").getAsEnum(TestEnum.class, "intVal");
+        TestEnum intVal = toml.getTomlTable("foo").getAsEnum(TestEnum.class, "intVal");
         Assert.assertEquals(TestEnum.values()[3], intVal);
     }
 

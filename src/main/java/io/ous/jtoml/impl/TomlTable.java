@@ -63,7 +63,7 @@ public class TomlTable extends HashMap<String, Object> {
 	public Boolean getBoolean(String name, Object... keys) throws ClassCastException {
 		return (Boolean) get(name, keys);
 	}
-	public TomlTable getKeyGroup(String name, Object... keys) throws ClassCastException {
+	public TomlTable getTomlTable(String name, Object... keys) throws ClassCastException {
 		return (TomlTable) get(name, keys);
 	}
 

@@ -23,6 +23,7 @@ public class Tokenizer {
     public static final String MULTILINE_STRING_DELIMITER = "\"\"\"";
     public static final char BASIC_STRING_DELIMITER = '\"';
     public static final char COMMENT_START = '#';
+    private final BufferedReader reader;
 
     public static List<ParsedToken> parse(Reader reader) throws IOException {
         Tokenizer tokenizer = new Tokenizer(reader);
@@ -79,49 +80,48 @@ public class Tokenizer {
     private List<ParsedToken> parsedTokens;
 
     //Tokenizing State:
-    private final List<String> code;
-    private final ListIterator<String> lines;
     private StringCharacterListIterator chars;
+    private boolean eof;
+    private int currentLine;
 
 
     public Tokenizer(Reader reader) throws IOException {
-        BufferedReader bufferedReader = buffer(reader);
+        this.reader = buffer(reader);
         parsedTokens = new ArrayList<ParsedToken>();
 
-        code = new ArrayList<String>();
-        String line;
-        while((line = bufferedReader.readLine()) != null) {
-            code.add(line);
-        }
-        lines = code.listIterator();
-//        chars = new StringCharacterListIterator("");
+        currentLine = 0;
+        eof = false;
         nextRawLine();
 
-        while(chars.hasNext() || lines.hasNext()) {
+        while(chars.hasNext() || !eof) {
             //No need to use whitespaces between tokens.
-            int lineIndex = lines.previousIndex();
+            int lineIndex = currentLine;
             int charIndex = chars.previousIndex()+1;
             Token token = parseNext();
             if(token != null) {
                 parsedTokens.add(new ParsedToken(token, lineIndex,charIndex));
             }
         }
-        parsedTokens.add(new ParsedToken(SymbolToken.Newline, lines.previousIndex(), lines.previous().length()));
     }
-    private String nextRawLine() {
-        String line = lines.next();
+    private String nextRawLine() throws IOException {
+        currentLine++;
+        String line = reader.readLine();
+        if(line == null) {
+            eof = true;
+            line = "";
+        }
         chars = new StringCharacterListIterator(line);
         return line;
     }
 
-    private char nextRawChar() {
+    private char nextRawChar() throws IOException {
         if(!chars.hasNext()) {
             nextRawLine();
             return '\n';
         }
         return chars.next();
     }
-    private Token parseMultilineString() {
+    private Token parseMultilineString() throws IOException {
         StringBuilder builder = new StringBuilder();
         char c = nextRawChar();
 
@@ -243,7 +243,7 @@ public class Tokenizer {
         }
         throw new ParseException("No ending single quote for literal string.");
     }
-    private Token parseMultilineLiteralString() {
+    private Token parseMultilineLiteralString() throws IOException {
         StringBuilder builder = new StringBuilder();
         while(true) {
             if(chars.nextIfSeqEquals("\'\'\'")) { //always in the same line
@@ -295,12 +295,7 @@ public class Tokenizer {
 
     private Token parseNext() throws IOException {
         if(!chars.hasNext() || chars.nextIfEquals(COMMENT_START)) {
-            if(lines.hasNext()) {
-                nextRawLine();
-            }
-            else {
-                chars = new StringCharacterListIterator(""); //ignore the rest of the characters in this line. (this is for an edge case - comment on the last line)
-            }
+            nextRawLine();
             return SymbolToken.Newline; //Always adding a new line for the last line.
         }
         if(Character.isWhitespace(chars.peek())) {

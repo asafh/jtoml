@@ -46,7 +46,7 @@ public class ObjectDeserializer {
             return (T) containingGroup.getAsEnum(type.asSubclass(Enum.class), keyName);
         }
 		else {
-			TomlTable target = containingGroup.getKeyGroup(keyName);
+			TomlTable target = containingGroup.getTomlTable(keyName);
 			return target == null ? null : create(type,target);
 		}
 	}
