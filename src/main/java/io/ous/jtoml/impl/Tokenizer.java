@@ -96,13 +96,27 @@ class Tokenizer {
             //No need to use whitespaces between tokens.
             int lineIndex = currentLine;
             int charIndex = chars.currentIndex();
-            Token token = parseNext();
-            if(token != null) {
-                parsedTokens.add(new ParsedToken(token, lineIndex,charIndex));
+            try {
+                Token token = parseNext();
+                if(token != null) {
+                    parsedTokens.add(new ParsedToken(token, lineIndex,charIndex));
+                }
             }
+            catch(NoSuchElementException e) {
+                error(lineIndex, charIndex, "Unexpected end of line", e);
+            }
+
         }
     }
+
+    private void error(int lineIndex, int charIndex, String s, Exception e) throws ParseException {
+        throw new ParseException(s+" at "+lineIndex+":"+charIndex, e);
+    }
+
     private void nextRawLine() throws IOException {
+        if(eof) {
+            error(currentLine, 0, "Unexpected end of file", null);
+        }
         currentLine++;
         String line = reader.readLine();
         if(line == null) {
@@ -157,13 +171,13 @@ class Tokenizer {
                             return ValuedToken.multilineString(builder.toString());
                         }
                         else { //Whoops, not really the end, only ""
-                            builder.append(c); //appending c1
-                            builder.append(c2); //appending c2
+                            builder.append(c); //appending c1="
+                            builder.append(c2); //appending c2="
                             c = c3; //dealing with c3
                         }
                     }
                     else {
-                        builder.append(c); //appending c1
+                        builder.append(c); //appending c1="
                         c = c2; //dealing with c2
                     }
                     break;
