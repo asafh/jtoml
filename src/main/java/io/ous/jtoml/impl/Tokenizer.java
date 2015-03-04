@@ -17,12 +17,12 @@ import java.util.regex.Pattern;
  * Time: 21:22
  * To change this template use File | Settings | File Templates.
  */
-public class Tokenizer {
+class Tokenizer {
     private static final String BREAK_LINE = System.getProperty("line.separator");
-    public static final String LITERAL_MULTILINE_STRING_DELIMITER = "\'\'\'";
-    public static final String MULTILINE_STRING_DELIMITER = "\"\"\"";
-    public static final char BASIC_STRING_DELIMITER = '\"';
-    public static final char COMMENT_START = '#';
+    private static final String LITERAL_MULTILINE_STRING_DELIMITER = "\'\'\'";
+    private static final String MULTILINE_STRING_DELIMITER = "\"\"\"";
+    private static final char BASIC_STRING_DELIMITER = '\"';
+    private static final char COMMENT_START = '#';
     private final BufferedReader reader;
 
     public static List<ParsedToken> parse(Reader reader) throws IOException {
@@ -77,10 +77,10 @@ public class Tokenizer {
     private static final Pattern KEY_PATTERN = Pattern.compile("[A-Za-z0-9_-]+");
 
     //Result
-    private List<ParsedToken> parsedTokens;
+    private final List<ParsedToken> parsedTokens;
 
     //Tokenizing State:
-    private StringCharacterListIterator chars;
+    private StringCharacterIterator chars;
     private boolean eof;
     private int currentLine;
 
@@ -96,22 +96,21 @@ public class Tokenizer {
         while(chars.hasNext() || !eof) {
             //No need to use whitespaces between tokens.
             int lineIndex = currentLine;
-            int charIndex = chars.previousIndex()+1;
+            int charIndex = chars.currentIndex();
             Token token = parseNext();
             if(token != null) {
                 parsedTokens.add(new ParsedToken(token, lineIndex,charIndex));
             }
         }
     }
-    private String nextRawLine() throws IOException {
+    private void nextRawLine() throws IOException {
         currentLine++;
         String line = reader.readLine();
         if(line == null) {
             eof = true;
             line = "";
         }
-        chars = new StringCharacterListIterator(line);
-        return line;
+        chars = new StringCharacterIterator(line);
     }
 
     private char nextRawChar() throws IOException {
@@ -168,7 +167,7 @@ public class Tokenizer {
                         builder.append(c); //appending c1
                         c = c2; //dealing with c2
                     }
-                    continue;
+                    break;
             }
         }
     }

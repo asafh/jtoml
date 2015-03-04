@@ -12,17 +12,7 @@ public interface Token {
         Key,
         MultilineString, BasicString, LiteralString,
         BooleanConstant, FloatConstant, IntegerConstant, DateConstant,
-        Symbol,Identifier;
-
-        /**
-         * return the token type's name camel-cased
-         * @return
-         */
-        public String getTokenTypeName() {
-            String elementName = name();
-            elementName = Character.toLowerCase(elementName.charAt(0))+elementName.substring(1);
-            return elementName;
-        }
+        Symbol;
     }
 
     public TokenType getType();

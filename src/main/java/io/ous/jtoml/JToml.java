@@ -1,6 +1,7 @@
 package io.ous.jtoml;
 
 import io.ous.jtoml.impl.Parser;
+import io.ous.jtoml.impl.TomlTable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,8 +24,7 @@ public class JToml {
     
     public static Toml parseString(String config) {
         try {
-            Toml parse = parse(new StringReader(config));
-            return parse;
+            return parse(new StringReader(config));
         } catch (IOException ex) {
             throw new IllegalStateException("StringReader should never throw an IOException",ex);
         }
@@ -32,6 +32,8 @@ public class JToml {
     }
     
     public static Toml parse(Reader reader) throws IOException {
-    	return new Parser(reader).parse();
+        Toml ret = new Toml();
+    	new Parser(reader, ret).parse();
+        return ret;
     }
 }

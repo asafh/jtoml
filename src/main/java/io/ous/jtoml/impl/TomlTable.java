@@ -13,7 +13,7 @@ public class TomlTable extends HashMap<String, Object> {
 
 	/**
 	 * Returns the object in the given path or null if it does not exist
-	 * @param key the key under this keygroup
+	 * @param key the key under this table
      * @param keys subsequent keys, each is either a string for a property name in a Table or an integer for an index in an Array
 	 * @return
 	 * @throws IllegalArgumentException if one of the keys goes through a value (such as a String), or isn't an index for going through an array
@@ -94,8 +94,8 @@ public class TomlTable extends HashMap<String, Object> {
 	}
 	
 	/**
-	 * Returns a map of this Toml. <br/>
-	 * The map has an entry for every assignment (full key -> value) and for every keygroup (implicit keygroups included) (keygroup key -> TomlTable)
+	 * Returns an unmodifiable map of this Toml Table. <br/>
+	 * The map has an entry for every property directly on this table.
 	 * @return
 	 */
 	public Map<String,Object> toMap() {

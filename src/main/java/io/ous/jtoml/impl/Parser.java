@@ -7,33 +7,26 @@ import io.ous.jtoml.impl.tokens.SymbolToken;
 import io.ous.jtoml.impl.tokens.Token;
 import io.ous.jtoml.impl.tokens.ValuedToken;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Parser {
-	private static final char ASSIGNMENT_DELIMITOR = '=';
-	
-	private static final char KEYGROUP_START = '[';
-	private static final char KEYGROUP_END = ']';
-	private static final int NOT_FOUND = -1;
-	
 	//Members:
-	private final TokenListListIterator parsedTokens;
-	private final Toml output;
-	private TomlTable currentKeygroup;
+	private final TokensAdvancedIterator parsedTokens;
+	private final TomlTable output;
+	private TomlTable currentTomlTable;
 	
 
 	public Parser(Reader reader) throws IOException {
 		this(reader,new Toml());
 	}
-    private static class TokenListListIterator extends AdvancedListIterator<Tokenizer.ParsedToken, List<Tokenizer.ParsedToken>> {
+    private static class TokensAdvancedIterator extends AdvancedIterator<Tokenizer.ParsedToken, List<Tokenizer.ParsedToken>> {
 
         private final List<Tokenizer.ParsedToken> parsedTokenList;
 
-        public TokenListListIterator(List<Tokenizer.ParsedToken> parsedTokenList) {
+        public TokensAdvancedIterator(List<Tokenizer.ParsedToken> parsedTokenList) {
             if(parsedTokenList == null) {
                 throw new NullPointerException();
             }
@@ -99,27 +92,22 @@ public class Parser {
         }
     }
 
-	public Parser(Reader reader, Toml toml) throws IOException {
+	public Parser(Reader reader, TomlTable toml) throws IOException {
         final List<Tokenizer.ParsedToken> parsedTokenList = Tokenizer.parse(reader);
-        this.parsedTokens = new TokenListListIterator(parsedTokenList);
+        this.parsedTokens = new TokensAdvancedIterator(parsedTokenList);
 
 		this.output = toml;
-		this.currentKeygroup = toml;
+		this.currentTomlTable = toml;
 	}
 
-	private static BufferedReader buffer(Reader reader) {
-		return (BufferedReader) (reader instanceof BufferedReader ? reader : new BufferedReader(reader));
-	}
-
-	public Toml parse() throws IOException {
+	public TomlTable parse() {
         while(parsedTokens.hasNext()) {
             Token token = parsedTokens.peek().token;
             //We can either have an empty line, the beginning of a
             if(token == SymbolToken.Newline) {
                 parsedTokens.next();
-                continue;
             }
-            if(token == SymbolToken.SquareLeft) {
+            else if(token == SymbolToken.SquareLeft) {
                 parsedTokens.next();
                 if(parsedTokens.nextIfMatches(SymbolToken.SquareLeft) != null) {
                     onArrayTable();
@@ -127,31 +115,27 @@ public class Parser {
                 else {
                     onTable();
                 }
-                continue;
             }
-            if(token.getType() == Token.TokenType.Key || token.getType() == Token.TokenType.BasicString) {
+            else if(token.getType() == Token.TokenType.Key || token.getType() == Token.TokenType.BasicString) {
                 onAssignment();
                 if(parsedTokens.nextIfMatches(SymbolToken.Newline) == null) {
                     throw new ParseException("Newline expected after assignment");
                 }
-                continue;
             }
         }
-
-		return output;
-		
+        return output;
 	}
 
 
     private void onAssignment() {
         List<String> parts = readKeyParts(SymbolToken.Equals);
         String name = parts.remove(parts.size()-1);
-        TomlTable createIn = travelIn(currentKeygroup, parts);//Key names are relative to the current table.
+        TomlTable createIn = travelIn(currentTomlTable, parts);//Key names are relative to the current table.
 
 		if(createIn.containsKey(name)) {
 			throw new ParseException("Cannot overwrite key "+name);
 		}
-        Object value = readValue(name);
+        Object value = readValue();
 
 		createIn.put(name, value);
 	}
@@ -170,7 +154,7 @@ public class Parser {
 
         Class<?> type = null;
         while(true) {
-            Object value = readValue(String.valueOf(ret.size()));
+            Object value = readValue();
             Class<?> currentType = value.getClass();
             if(type == null) {
                 type = currentType;
@@ -191,7 +175,7 @@ public class Parser {
 
         return ret;
     }
-    private TomlTable readInlineTable(String name) {
+    private TomlTable readInlineTable() {
         TomlTable ret = new TomlTable();
         if(parsedTokens.nextIfMatches((SymbolToken.CurlyRight)) != null) { //empty table.
             return ret;
@@ -208,7 +192,7 @@ public class Parser {
             return ret;
         }
     }
-    private Object readValue(String name) {
+    private Object readValue() {
         Token token = parsedTokens.next().token;
         if(token instanceof ValuedToken) {
             return ((ValuedToken) token).getValue();
@@ -217,7 +201,7 @@ public class Parser {
             return readArray();
         }
         if(token == SymbolToken.CurlyLeft) {
-            return readInlineTable(name);
+            return readInlineTable();
         }
         throw new ParseException("Unexpected token "+token);
     }
@@ -250,14 +234,14 @@ public class Parser {
     }
 
     private void diveFromRoot(List<String> names) {
-        currentKeygroup = travelIn(output, names); //Table names are absolute, not relative
+        currentTomlTable = travelIn(output, names); //Table names are absolute, not relative
     }
     private TomlTable travelIn(TomlTable start, List<String> names) {
         TomlTable current = start;
         for(String part : names) {
             //Diving in:
             Object value = current.get(part);
-            if(value == null) { //New keygroup
+            if(value == null) { //New table
                 TomlTable child = new TomlTable();
                 current.put(part, child);
                 current = child;
@@ -279,7 +263,7 @@ public class Parser {
                 current = (TomlTable) arrayItem;
             }
             else {
-                throw new ParseException(names+" already has a non-keygroup or array table value named "+part);
+                throw new ParseException(names+" already has a non-table or array table value named "+part);
             }
         }
         return current;
@@ -298,11 +282,14 @@ public class Parser {
         String tableName = parts.remove(parts.size()-1);
         diveFromRoot(parts); //Table array names are absolute, not relative
 
-        List<TomlTable> tableArray = (List<TomlTable>) currentKeygroup.getList(tableName);
+        List<TomlTable> tableArray = (List<TomlTable>) currentTomlTable.getList(tableName);
         if(tableArray == null) {
             tableArray = new ArrayList<TomlTable>();
         }
-        currentKeygroup = new TomlTable();
-        tableArray.add(currentKeygroup);
+        else if(!tableArray.isEmpty() && !(tableArray.get(0) instanceof  TomlTable)) {
+            throw new ParseException("Cannot add TableArray to an existing Array of other value type.");
+        }
+        currentTomlTable = new TomlTable();
+        tableArray.add(currentTomlTable);
     }
 }

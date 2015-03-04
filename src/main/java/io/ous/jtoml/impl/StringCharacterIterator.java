@@ -1,6 +1,5 @@
 package io.ous.jtoml.impl;
 
-import java.util.ListIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,9 +10,9 @@ import java.util.regex.Pattern;
  * Time: 23:02
  * To change this template use File | Settings | File Templates.
  */
-public class StringCharacterListIterator extends AdvancedListIterator<Character, String> {
+public class StringCharacterIterator extends AdvancedIterator<Character, String> {
     private final String value;
-    public StringCharacterListIterator(String value) {
+    public StringCharacterIterator(String value) {
         this.value = value;
     }
 
@@ -22,8 +21,7 @@ public class StringCharacterListIterator extends AdvancedListIterator<Character,
         String rest = peekAll();
         Matcher matcher = pattern.matcher(rest);
         if(matcher.find()) {
-            String ret = matcher.group();
-            return ret;
+            return matcher.group();
         }
         return null;
     }

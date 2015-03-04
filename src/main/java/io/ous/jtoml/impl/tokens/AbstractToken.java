@@ -7,13 +7,12 @@ package io.ous.jtoml.impl.tokens;
  * Time: 21:27
  * To change this template use File | Settings | File Templates.
  */
-public class AbstractToken implements Token {
+class AbstractToken implements Token {
     private final TokenType type;
-    public AbstractToken(TokenType type) {
+    AbstractToken(TokenType type) {
         this.type = type;
     }
 
-//    @Override
     public TokenType getType() {
         return type;
     }

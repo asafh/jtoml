@@ -18,7 +18,7 @@ toml = JToml.parse(new StringReader("foo = 42")); // From a reader
 ```
 
 ## Getting values
-Parsing a TOML file returns a Toml instance, which is the root keygroup.  
+Parsing a TOML file returns a Toml instance, which is the root toml table.
 TomlTables have methods to return local values (directly in this TomlTable)
 or a relative value (e.g. getting "y.z." from TomlTable "x" will return the value for "x.y.z").
 

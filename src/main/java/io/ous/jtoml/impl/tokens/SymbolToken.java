@@ -20,23 +20,18 @@ public enum SymbolToken implements Token {
     SquareLeft('['),	SquareRight(']'),
     //Delimiters:
     Dot('.'),			Comma(','),
-    //Operators:
-
-    @OperatorSymbol		Plus('+'),
-    @OperatorSymbol		Equals('='),
-    @OperatorSymbol		Minus('-'),
-
+    //Assignments:
+    Equals('='),
+    //Strings:
     SingleQuote('\''),
     DoubleQuote('\"'),
-    Underscore('_'),
-    Backslash('\\'),
     Newline('\n');
 
     private final char symbol;
     private SymbolToken(char symbol) {
         this.symbol = symbol;
     }
-    public char getSymbol() {
+    char getSymbol() {
         return symbol;
     }
 //    @Override
@@ -49,37 +44,16 @@ public enum SymbolToken implements Token {
         return String.valueOf(symbol);
     }
 
-    public boolean isOperator() {
-        try {
-            return SymbolToken.class.getField(name()).isAnnotationPresent(OperatorSymbol.class);
-        } catch (SecurityException e) {
-            throw new IllegalStateException(e); //will not occur, we are checking for a member of our own class
-        } catch (NoSuchFieldException e) {
-            throw new IllegalStateException(e); //will not occur, we are checking for looking for ourselves, must exist.
-        }
-    }
-
-    /**
-     * Marker annotation, is assigned to SymbolTokens which are also operators (may also have other meanins, e.q. = is both an operator and assignment)
-     * @author Asafh
-     *
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.FIELD)
-    private static @interface OperatorSymbol {
-
-    }
 
 
     private static final Map<Character, SymbolToken> MAPPING;
     static {
-        MAPPING = new HashMap<Character, SymbolToken>(30);
-        for(SymbolToken token : values()) {
+
+        SymbolToken[] values = values();
+        MAPPING = new HashMap<Character, SymbolToken>(20);
+        for(SymbolToken token : values) {
             MAPPING.put(token.getSymbol(), token);
         }
-    }
-    private static Map<Character, SymbolToken> getMapping() {
-        return MAPPING;
     }
 
     /**
@@ -88,7 +62,7 @@ public enum SymbolToken implements Token {
      * @return
      */
     public static SymbolToken getSymbolToken(char c) {
-        return getMapping().get(c);
+        return MAPPING.get(c);
     }
 
     /**

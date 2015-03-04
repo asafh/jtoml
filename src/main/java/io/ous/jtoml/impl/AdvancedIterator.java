@@ -1,5 +1,6 @@
 package io.ous.jtoml.impl;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
@@ -13,13 +14,18 @@ import java.util.regex.Pattern;
  * Time: 23:02
  * To change this template use File | Settings | File Templates.
  */
-public abstract class AdvancedListIterator<T, TSequence> implements ListIterator<T> {
+abstract class AdvancedIterator<T, TSequence> implements Iterator<T> {
     protected int at;
 
     public abstract int length();
     public abstract int length(TSequence seq);
     public abstract T peek();
     public abstract TSequence peek(int count);
+
+    public AdvancedIterator() {
+        at = 0;
+    }
+
     public TSequence peekAll() {
         return peek(length()-at);
     }
@@ -50,10 +56,7 @@ public abstract class AdvancedListIterator<T, TSequence> implements ListIterator
     }
     public boolean peekIfSeqEquals(TSequence check) {
         int length = length(check);
-        if(hasNext(length) && seqEquals(peek(length),check)) {
-            return true;
-        }
-        return false;
+        return hasNext(length) && seqEquals(peek(length),check);
     }
     public boolean peekIfEquals(T check) {
         if(!hasNext()) {
@@ -83,32 +86,11 @@ public abstract class AdvancedListIterator<T, TSequence> implements ListIterator
         at += length;
     }
 
-    public boolean hasPrevious() {
-        return at > 0;
-    }
-
-    public T previous() {
-        at--;
-        return peek();
-    }
-
-    public int nextIndex() {
-        return at+1;
-    }
-
-    public int previousIndex() {
-        return at-1;
+    public int currentIndex() {
+        return at;
     }
 
     public void remove() {
-        throw new UnsupportedOperationException("Cannot remove through StringCharacterListIterator");
-    }
-
-    public void set(T character) {
-        throw new UnsupportedOperationException("Cannot set through StringCharacterListIterator");
-    }
-
-    public void add(T character) {
-        throw new UnsupportedOperationException("Cannot add through StringCharacterListIterator");
+        throw new UnsupportedOperationException("Cannot remove through StringCharacterIterator");
     }
 }
