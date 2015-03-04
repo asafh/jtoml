@@ -19,8 +19,11 @@ toml = JToml.parse(new StringReader("foo = 42")); // From a reader
 
 ## Getting values
 Parsing a TOML file returns a Toml instance, which is the root toml table.
-TomlTables have methods to return local values (directly in this TomlTable)
-or a relative value (e.g. getting "y.z." from TomlTable "x" will return the value for "x.y.z").
+TomlTables have accessor methods for each possible value type.
+The accessor receives a single name String parameter, and optionally any number of additional String or Integer values.
+Looking at the arguments [name, optional1,optional2,... optionalN], each specifies a way to traverse down out TOML.
+ String arguments travers down a TomlTable (hence the first is always a String) and Integers travers down a List.
+e.g. toml.getX("foo",3,"aa","z") will be in the JSON world "toml.foo[3].aa.z"
 
 ```java
 toml.getValue("foo"); // Object
@@ -29,11 +32,8 @@ toml.getBoolean("foo"); // Boolean
 toml.getDate("foo"); // Date
 toml.getDouble("foo"); // Double
 toml.getLong("foo"); // Long
-toml.getList("foo"); // List<Object>
+toml.getList("foo"); // List<?>
 toml.getTomlTable("foo"); // TomlTable
-
-toml.getLocalValue("foo"); // returns the value for "foo", dots are not allowed
-toml.getLocalXXX("foo"); //....
 
 ```
 
