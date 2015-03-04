@@ -1,4 +1,4 @@
-package io.ous.jtoml.impl.tokens;
+package io.ous.jtoml.impl;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -2,10 +2,9 @@ package io.ous.jtoml.impl;
 
 import io.ous.jtoml.ParseException;
 import io.ous.jtoml.Toml;
-import io.ous.jtoml.impl.tokens.StringToken;
-import io.ous.jtoml.impl.tokens.SymbolToken;
-import io.ous.jtoml.impl.tokens.Token;
-import io.ous.jtoml.impl.tokens.ValuedToken;
+import io.ous.jtoml.impl.SymbolToken;
+import io.ous.jtoml.impl.Token;
+import io.ous.jtoml.impl.ValuedToken;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -215,7 +214,7 @@ public class Parser {
             switch(keyPart.getType()) {
                 case Key:
                 case BasicString:
-                    key = ((StringToken) keyPart).getValue();
+                    key = ((ValuedToken<String>) keyPart).getValue();
                     break;
                 default:
                     throw new ParseException("Key can only have bare keys or basic strings");

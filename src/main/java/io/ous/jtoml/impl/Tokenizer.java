@@ -1,7 +1,6 @@
 package io.ous.jtoml.impl;
 
 import io.ous.jtoml.ParseException;
-import io.ous.jtoml.impl.tokens.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -155,7 +154,7 @@ class Tokenizer {
                     if(c2 == '\"') {
                         char c3 = nextRawChar();
                         if(c3 == '\"') { //END:
-                            return StringToken.multiline(builder.toString());
+                            return ValuedToken.multilineString(builder.toString());
                         }
                         else { //Whoops, not really the end, only ""
                             builder.append(c); //appending c1
@@ -185,7 +184,7 @@ class Tokenizer {
                     builder.append(c);
                     break;
                 case '\"': //END:
-                    return StringToken.basic(builder.toString());
+                    return ValuedToken.basicString(builder.toString());
 
             }
         }
@@ -234,7 +233,7 @@ class Tokenizer {
         while(chars.hasNext()) {
             char c = chars.next();
             if(c == '\'') { //END:
-                return StringToken.literal(builder.toString());
+                return ValuedToken.literalString(builder.toString());
             }
             else {
                 builder.append(c);
@@ -246,7 +245,7 @@ class Tokenizer {
         StringBuilder builder = new StringBuilder();
         while(true) {
             if(chars.nextIfSeqEquals("\'\'\'")) { //always in the same line
-                return StringToken.literal(builder.toString());
+                return ValuedToken.literalString(builder.toString());
             }
             else {
                 builder.append(nextRawChar());
@@ -280,16 +279,16 @@ class Tokenizer {
         SimpleDateFormat parser = new SimpleDateFormat(pattern);
         try {
             Date date = parser.parse(group);
-            return new DateToken(date);
+            return ValuedToken.dateToken(date);
         } catch (java.text.ParseException e) {
             throw new ParseException("Couldn't parse date "+group, e);
         }
     }
     private Token parseFloatToken(String group) {
-        return new FloatConstantToken(Double.valueOf(group));
+        return ValuedToken.floatToken(Double.valueOf(group));
     }
     private Token parseIntegerToken(String group) {
-        return new IntegerConstantToken(Long.valueOf(group));
+        return ValuedToken.integerToken(Long.valueOf(group));
     }
 
     private Token parseNext() throws IOException {
@@ -332,10 +331,10 @@ class Tokenizer {
         }
 
         if(chars.nextIfSeqEquals("true")) {
-            return new BooleanConstantToken(true);
+            return ValuedToken.booleanToken(true);
         }
         if(chars.nextIfSeqEquals("false")) {
-            return new BooleanConstantToken(false);
+            return ValuedToken.booleanToken(false);
         }
 
         String match;
@@ -352,7 +351,7 @@ class Tokenizer {
             }
         }
         if((match = chars.nextIfMatches(KEY_PATTERN)) != null) {
-            return StringToken.key(match);
+            return ValuedToken.key(match);
         }
 
         throw new ParseException("Unexpected input: "+chars.peekAll());
