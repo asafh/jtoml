@@ -23,13 +23,15 @@ public class JToml {
     
     public static Toml parseString(String config) {
         try {
-            return parse(new StringReader(config));
+            Toml parse = parse(new StringReader(config));
+            return parse;
         } catch (IOException ex) {
             throw new IllegalStateException("StringReader should never throw an IOException",ex);
         }
+
     }
     
     public static Toml parse(Reader reader) throws IOException {
-    	return new Parser(reader).parse();   	
+    	return new Parser(reader).parse();
     }
 }

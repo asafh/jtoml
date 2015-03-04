@@ -36,8 +36,8 @@ public class ExampleTomlTest {
 		// [owner]
 		// name = "Tom Preston-Werner"
 		// organization = "GitHub"
-		assertEquals("Tom Preston-Werner", toml.getString("owner.name"));
-		assertEquals("GitHub", toml.getString("owner.organization"));
+		assertEquals("Tom Preston-Werner", toml.getString("owner","name"));
+		assertEquals("GitHub", toml.getString("owner","organization"));
 	}
 
 	@Test
@@ -46,7 +46,7 @@ public class ExampleTomlTest {
 		// bio = "GitHub Cofounder & CEO\nLikes tater tots and beer #awesome."
 		assertEquals(
 				"GitHub Cofounder & CEO\nLikes tater tots and beer #awesome.",
-				toml.getString("owner.bio"));
+				toml.getString("owner","bio"));
 	}
 
 	@Test
@@ -54,7 +54,7 @@ public class ExampleTomlTest {
 		// dob = 1979-05-27T07:32:00Z # First class dates? Why not?
 		assertEquals(
 				createCalendar("yyyy-MM-dd-HH:mm:ssZ",
-						"1979-05-27-07:32:00-0000").getTime(), toml.getDate("owner.dob"));
+						"1979-05-27-07:32:00-0000").getTime(), toml.getDate("owner","dob"));
 	}
 
 	@Test
@@ -62,10 +62,10 @@ public class ExampleTomlTest {
 		// [database]
 		// server = "192.168.1.1"
 		// ports = [ 8001, 8001, 8002 ]
-		assertEquals("192.168.1.1", toml.getValue("database.server"));
+		assertEquals("192.168.1.1", toml.getString("database","server"));
 		assertEquals(
 				createList(Long.valueOf(8001), Long.valueOf(8001), Long.valueOf(8002)),
-                toml.getList("database.ports"));
+                toml.getList("database","ports"));
 	}
 
 	@Test
@@ -74,8 +74,8 @@ public class ExampleTomlTest {
 		// connection_max = 5000
 		// latency_max = 42 # this is in milliseconds
 		assertEquals(Long.valueOf(5000),
-				toml.getLong("database.connection_max"));
-		assertEquals(Long.valueOf(42), toml.getLong("database.latency_max"));
+				toml.getLong("database","connection_max"));
+		assertEquals(Long.valueOf(42), toml.getLong("database","latency_max"));
 	}
 
 	@Test
@@ -83,9 +83,9 @@ public class ExampleTomlTest {
 		// [database]
 		// enabled = true
 		// awesome = false # just because
-		assertEquals(Boolean.valueOf(true), toml.getBoolean("database.enabled"));
+		assertEquals(Boolean.valueOf(true), toml.getBoolean("database","enabled"));
 		assertEquals(Boolean.valueOf(false),
-				toml.getBoolean("database.awesome"));
+				toml.getBoolean("database","awesome"));
 	}
 
 	@Test
@@ -96,14 +96,14 @@ public class ExampleTomlTest {
 		// [servers.alpha]
 		// ip = "10.0.0.1"
 		// dc = "eqdc10"
-		assertEquals("10.0.0.1", toml.getValue("servers.alpha.ip"));
-		assertEquals("eqdc10", toml.getValue("servers.alpha.dc"));
+		assertEquals("10.0.0.1", toml.getString("servers","alpha","ip"));
+		assertEquals("eqdc10", toml.getString("servers","alpha","dc"));
 
 		// [servers.beta]
 		// ip = "10.0.0.2"
 		// dc = "eqdc10"
-		assertEquals("10.0.0.2", toml.getValue("servers.beta.ip"));
-		assertEquals("eqdc10", toml.getValue("servers.beta.dc"));
+		assertEquals("10.0.0.2", toml.getString("servers","beta","ip"));
+		assertEquals("eqdc10", toml.getString("servers","beta","dc"));
 	}
 
 	@Test
@@ -114,7 +114,7 @@ public class ExampleTomlTest {
 		assertEquals(ExampleTomlTest.<Object> createList(
 				createList("gamma", "delta"),
 				createList(Long.valueOf(1), Long.valueOf(2))),
-				toml.getList("clients.data"));
+				toml.getList("clients","data"));
 	}
 
 	private static Calendar createCalendar(String pattern, String value)

@@ -21,43 +21,43 @@ public class ObjectDeserializer {
 		return INSTANCE;
 	}
 	/**
-	 * Creates an object of type <code>type</code> initializing fields using the given KeyGroup
+	 * Creates an object of type <code>type</code> initializing fields using the given TomlTable
 	 * @param type
 	 * @param group
 	 * @return
 	 */
-	public<T> T create(Class<T> type, KeyGroup group) {
+	public<T> T create(Class<T> type, TomlTable group) {
 		T ret = instantiate(type);
 		visitFields(ret, group);
 		return ret;
 	}
 	/**
-	 * Creates an object of type <code>type</code> using the value of the key named <code>keyName</code> under the given KeyGroup
+	 * Creates an object of type <code>type</code> using the value of the key named <code>keyName</code> under the given TomlTable
 	 * @param type The type of object to create
 	 * @param containingGroup The group containing the value representing the created Object
 	 * @param keyName The name in the containingGroup from which to read the value.
 	 * @return
 	 */
-	public<T> T createField(Class<T> type, KeyGroup containingGroup, String keyName) {
+	public<T> T createField(Class<T> type, TomlTable containingGroup, String keyName) {
 		if(PRIMITIVES.contains(type)) {
-			return type.cast(containingGroup.getLocalValue(keyName));
+			return type.cast(containingGroup.get(keyName));
 		}
         else if(type.isEnum()) {
-            return (T) containingGroup.getLocalAsEnum(keyName, type.asSubclass(Enum.class));
+            return (T) containingGroup.getAsEnum(type.asSubclass(Enum.class), keyName);
         }
 		else {
-			KeyGroup target = containingGroup.getLocalKeyGroup(keyName);
+			TomlTable target = containingGroup.getKeyGroup(keyName);
 			return target == null ? null : create(type,target);
 		}
 	}
-	public void visitFields(Object obj, KeyGroup groupForObject) {
+	public void visitFields(Object obj, TomlTable groupForObject) {
 		Class<?> clz = obj.getClass();
 		while(!Object.class.equals(clz)) {
 			visitClassFields(obj, groupForObject, clz);
 			clz = clz.getSuperclass();
 		}
 	}
-	protected void visitClassFields(Object obj, KeyGroup groupForObject, Class<?> clz) {
+	protected void visitClassFields(Object obj, TomlTable groupForObject, Class<?> clz) {
 		for(Field field : clz.getDeclaredFields()) {
 			Object value = createField(field.getType(), groupForObject, field.getName());
 			if(value != null) { //If has value

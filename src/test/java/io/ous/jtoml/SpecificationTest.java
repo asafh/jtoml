@@ -1,7 +1,5 @@
 package io.ous.jtoml;
 
-import io.ous.jtoml.impl.KeyGroup;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -84,7 +82,7 @@ public class SpecificationTest {
 	@Test
 	public void testLocalsAsMap() throws IOException {
 		Toml toml = JToml.parseString("[foo]\nbar = true\nbaz = false");
-		Map<String, Object> map = toml.getKeyGroup("foo").localsAsMap();
+		Map<String, Object> map = toml.getKeyGroup("foo").toMap();
 		Assert.assertTrue(map.containsKey("bar") && map.get("bar").equals(Boolean.TRUE));
 		Assert.assertTrue(map.containsKey("baz") && map.get("baz").equals(Boolean.FALSE));
 	}
@@ -93,10 +91,12 @@ public class SpecificationTest {
 		Toml toml = JToml.parseString("x=\"A\"\n[foo]\nbar = true\nbaz = false");
 		
 		Map<String, Object> map = toml.toMap();
-		Assert.assertTrue(map.containsKey("foo") && ((KeyGroup) map.get("foo")).getName().equals("foo"));
-		
-		Assert.assertTrue(map.containsKey("foo.bar") && map.get("foo.bar").equals(Boolean.TRUE));
-		Assert.assertTrue(map.containsKey("foo.baz") && map.get("foo.baz").equals(Boolean.FALSE));
+
+        Assert.assertTrue(map.get("foo") instanceof Map);
+
+        Map<String, Object> foo = (Map<String, Object>) map.get("foo");
+        Assert.assertEquals(Boolean.TRUE, foo.get("bar"));
+        Assert.assertEquals(Boolean.FALSE, foo.get("baz"));
 	}
 
 	@Test
@@ -131,10 +131,10 @@ public class SpecificationTest {
     public void testEnum() throws IOException {
         Toml toml = JToml.parseString("[foo]\nstringKey=\"Dog\"\nintVal=3");
 
-        TestEnum value = toml.getAsEnum("foo.stringKey", TestEnum.class);
+        TestEnum value = toml.getAsEnum(TestEnum.class, "foo","stringKey");
         Assert.assertEquals(TestEnum.Dog, value);
 
-        TestEnum intVal = toml.getKeyGroup("foo").getLocalAsEnum("intVal", TestEnum.class);
+        TestEnum intVal = toml.getKeyGroup("foo").getAsEnum(TestEnum.class, "intVal");
         Assert.assertEquals(TestEnum.values()[3], intVal);
     }
 
