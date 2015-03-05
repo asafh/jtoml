@@ -51,43 +51,19 @@ public class Parser {
         public List<Tokenizer.ParsedToken> peek(int count) {
             return parsedTokenList.subList(at,at+count);
         }
-        protected boolean matches(Object pattern, Tokenizer.ParsedToken ptoken) {
-            if(pattern == null) {
+        protected boolean matches(SymbolToken symbol, Tokenizer.ParsedToken ptoken) {
+            return ptoken.token == symbol;
+        }
+
+        public boolean peekIfMatch(SymbolToken symbol) {
+            return matches(symbol, peek());
+        }
+        public boolean nextIfMatch(SymbolToken symbol) {
+            if(matches(symbol, peek())) {
+                next();
                 return true;
             }
-            if(pattern instanceof Token.TokenType) {
-                return ptoken.token.getType() == pattern;
-            }
-            if(pattern instanceof SymbolToken) {
-                return ptoken.token == pattern;
-            }
             return false;
-        }
-
-        public Tokenizer.ParsedToken peekIfMatches(Object pattern) {
-            Tokenizer.ParsedToken peek = peek();
-            return matches(pattern, peek) ? peek : null;
-        }
-        public Tokenizer.ParsedToken nextIfMatches(Object pattern) {
-            Tokenizer.ParsedToken peek = peek();
-            return matches(pattern, peek) ? next() : null;
-        }
-        public List<Tokenizer.ParsedToken> peekIfMatches(Object... pattern) {
-            List<Tokenizer.ParsedToken> rest = peek(pattern.length);
-            for(int i = 0; i < pattern.length; ++i) {
-                if(!matches(pattern[i], rest.get(i))) {
-                    return null;
-                }
-            }
-
-            return rest;
-        }
-        public List<Tokenizer.ParsedToken> nextIfMatches(Object... pattern) {
-            List<Tokenizer.ParsedToken> ret = peekIfMatches(pattern);
-            if(ret != null) {
-                advance(ret.size());
-            }
-            return ret;
         }
     }
 
@@ -108,7 +84,7 @@ public class Parser {
             }
             else if(token == SymbolToken.SquareLeft) {
                 parsedTokens.next();
-                if(parsedTokens.nextIfMatches(SymbolToken.SquareLeft) != null) {
+                if(parsedTokens.nextIfMatch(SymbolToken.SquareLeft) ) {
                     onArrayTable();
                 }
                 else {
@@ -117,7 +93,7 @@ public class Parser {
             }
             else if(token.getType() == Token.TokenType.Key || token.getType() == Token.TokenType.BasicString) {
                 onAssignment();
-                if(parsedTokens.nextIfMatches(SymbolToken.Newline) == null) {
+                if(!parsedTokens.nextIfMatch(SymbolToken.Newline)) {
                     throw new ParseException("Newline expected after assignment");
                 }
             }
@@ -163,11 +139,11 @@ public class Parser {
             }
             ret.add(value);
             removeNewlines(); //arrays can have new lines after values
-            if(parsedTokens.nextIfMatches(SymbolToken.Comma) != null) {
+            if(parsedTokens.nextIfMatch(SymbolToken.Comma) ) {
                 removeNewlines(); //arrays can have new lines after commas
                 continue;
             }
-            if(parsedTokens.nextIfMatches(SymbolToken.SquareRight) != null) {
+            if(parsedTokens.nextIfMatch(SymbolToken.SquareRight) ) {
                 break;
             }
         }
@@ -176,15 +152,15 @@ public class Parser {
     }
     private TomlTable readInlineTable() {
         TomlTable ret = new TomlTable();
-        if(parsedTokens.nextIfMatches((SymbolToken.CurlyRight)) != null) { //empty table.
+        if(parsedTokens.nextIfMatch((SymbolToken.CurlyRight)) ) { //empty table.
             return ret;
         }
         while(true) {
             onAssignment();
-            if(parsedTokens.nextIfMatches(SymbolToken.Comma) != null) {
+            if(parsedTokens.nextIfMatch(SymbolToken.Comma) ) {
                 continue;
             }
-            if(parsedTokens.nextIfMatches(SymbolToken.CurlyRight) == null) {
+            if(!parsedTokens.nextIfMatch(SymbolToken.CurlyRight)) {
                 throw new ParseException("After assignment, ',' or '}' are expected in an inline table.");
             }
 
@@ -274,7 +250,7 @@ public class Parser {
 	}
     private void onArrayTable() {
         List<String> parts = readKeyParts(SymbolToken.SquareRight);
-        if(parsedTokens.nextIfMatches(SymbolToken.SquareRight) == null) { //checking for second end.
+        if(!parsedTokens.nextIfMatch(SymbolToken.SquareRight)) { //checking for second end.
             throw new ParseException("Array table must end with ]]");
         }
 
