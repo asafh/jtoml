@@ -1,12 +1,6 @@
 package io.ous.jtoml;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,8 +47,7 @@ public class ExampleTomlTest {
 	public void testDate() throws ParseException, ClassCastException, java.text.ParseException {
 		// dob = 1979-05-27T07:32:00Z # First class dates? Why not?
 		assertEquals(
-				createCalendar("yyyy-MM-dd-HH:mm:ssZ",
-						"1979-05-27-07:32:00-0000").getTime(), toml.getDate("owner","dob"));
+				Utils.createCalendar("1979-05-27-07:32:00-0000"), toml.getDate("owner","dob"));
 	}
 
 	@Test
@@ -64,7 +57,7 @@ public class ExampleTomlTest {
 		// ports = [ 8001, 8001, 8002 ]
 		assertEquals("192.168.1.1", toml.getString("database","server"));
 		assertEquals(
-				createList(Long.valueOf(8001), Long.valueOf(8001), Long.valueOf(8002)),
+				Utils.createList(Long.valueOf(8001), Long.valueOf(8001), Long.valueOf(8002)),
                 toml.getList("database","ports"));
 	}
 
@@ -111,21 +104,10 @@ public class ExampleTomlTest {
 		// [clients]
 		// data = [ ["gamma", "delta"], [1, 2] ] # just an update to make sure
 		// parsers support it
-		assertEquals(ExampleTomlTest.<Object> createList(
-				createList("gamma", "delta"),
-				createList(Long.valueOf(1), Long.valueOf(2))),
+		assertEquals(Utils.<Object> createList(
+                Utils.createList("gamma", "delta"),
+                Utils.createList(Long.valueOf(1), Long.valueOf(2))),
 				toml.getList("clients","data"));
 	}
 
-	private static Calendar createCalendar(String pattern, String value)
-			throws ParseException, java.text.ParseException {
-		Date date = new SimpleDateFormat(pattern).parse(value);
-		Calendar calendar = GregorianCalendar.getInstance();
-		calendar.setTime(date);
-		return calendar;
-	}
-
-	private static <T> List<T> createList(T... elements) {
-		return Arrays.<T> asList(elements);
-	}
 }

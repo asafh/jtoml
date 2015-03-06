@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -24,9 +25,8 @@ class Tokenizer {
     private static final char COMMENT_START = '#';
     private final BufferedReader reader;
 
-    public static List<ParsedToken> parse(Reader reader) throws IOException {
-        Tokenizer tokenizer = new Tokenizer(reader);
-        return tokenizer.parsedTokens;
+    public static Tokenizer parse(Reader reader) throws IOException {
+        return new Tokenizer(reader);
     }
 
     private static BufferedReader buffer(Reader reader) {
@@ -55,7 +55,13 @@ class Tokenizer {
      1979-05-27T00:32:00-07:00
      1979-05-27T00:32:00.999999-07:00
      */
-    private static final Pattern DATE_PATTERN = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|(-\\d{2}:\\d{2})|\\.\\d{6}-\\d{2}:\\d{2})");
+    private static final Pattern DATE_PATTERN = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(\\.(\\d{1,6}))?(Z|-\\d{2}:\\d{2})");
+    private static final int DATE_PATTERN_GROUP_DATETIME = 1;
+    private static final int DATE_PATTERN_GROUP_FRACTION = 3;
+    private static final int DATE_PATTERN_GROUP_TZ = 4;
+    private static final int DATE_FRACTION_PERCISION = 6;
+    private static final int DATE_FRACTION_MAX = 1000000;
+    private static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
     /**
      * # fractional
      +1.0
@@ -70,13 +76,11 @@ class Tokenizer {
      # both
      6.626e-34
      */
-    private static final Pattern FLOAT_PATTERN = Pattern.compile("^\\d+(_\\d+)*((\\.\\d+(_\\d+)*)|(?=E))(E(\\+|-)?\\d+(_\\d+)*)?", Pattern.CASE_INSENSITIVE);
-    private static final Pattern INTEGER_PATTERN = Pattern.compile("^\\d+");
+    private static final Pattern FLOAT_PATTERN = Pattern.compile("^(\\+|-)?\\d+(_\\d+)*((\\.\\d+(_\\d+)*)|(?=E))(E(\\+|-)?\\d+(_\\d+)*)?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INTEGER_PATTERN = Pattern.compile("^(\\+|-)?\\d+(_\\d+)*");
 
     private static final Pattern KEY_PATTERN = Pattern.compile("[A-Za-z0-9_-]+");
 
-    //Result
-    private final List<ParsedToken> parsedTokens;
 
     //Tokenizing State:
     private StringCharacterIterator chars;
@@ -86,36 +90,68 @@ class Tokenizer {
 
     public Tokenizer(Reader reader) throws IOException {
         this.reader = buffer(reader);
-        parsedTokens = new ArrayList<ParsedToken>();
 
         currentLine = 0;
         eof = false;
         nextRawLine();
-
-        while(chars.hasNext() || !eof) {
+    }
+    private ParsedToken current = null;
+    public Tokenizer.ParsedToken peek() {
+        return current == null ? current = next() : current;
+    }
+    public boolean hasNext() {
+        return chars.hasNext() || !eof;
+    }
+    public Tokenizer.ParsedToken next() {
+        if(current == null) {
             //No need to use whitespaces between tokens.
             int lineIndex = currentLine;
             int charIndex = chars.currentIndex();
             try {
-                Token token = parseNext();
+                Token token = tryParseNext();
                 if(token != null) {
-                    parsedTokens.add(new ParsedToken(token, lineIndex,charIndex));
+                    return new ParsedToken(token, lineIndex,charIndex);
+                }
+                else {
+                    return next();
                 }
             }
             catch(NoSuchElementException e) {
-                error(lineIndex, charIndex, "Unexpected end of line", e);
+                throw error(lineIndex, charIndex, "Unexpected end of line", e);
             }
-
+            catch(IOException iox) {
+                throw error(lineIndex, charIndex, "Unexpected IO Exception", iox);
+            }
+        }
+        else {
+            ParsedToken ret = current;
+            current = null;
+            return ret;
         }
     }
 
-    private void error(int lineIndex, int charIndex, String s, Exception e) throws ParseException {
-        throw new ParseException(s+" at "+lineIndex+":"+charIndex, e);
+    protected boolean matches(SymbolToken symbol, Tokenizer.ParsedToken ptoken) {
+        return ptoken.token == symbol;
+    }
+
+    public boolean peekIfMatch(SymbolToken symbol) {
+        return matches(symbol, peek());
+    }
+    public boolean nextIfMatch(SymbolToken symbol) {
+        if(matches(symbol, peek())) {
+            next();
+            return true;
+        }
+        return false;
+    }
+
+    private ParseException error(int lineIndex, int charIndex, String s, Exception e) throws ParseException {
+        return new ParseException(s+" at "+lineIndex+":"+charIndex, e);
     }
 
     private void nextRawLine() throws IOException {
         if(eof) {
-            error(currentLine, 0, "Unexpected end of file", null);
+            throw error(currentLine, 0, "Unexpected end of file", null);
         }
         currentLine++;
         String line = reader.readLine();
@@ -146,6 +182,7 @@ class Tokenizer {
                     else {
                         builder.append(c);
                     }
+                    c = nextRawChar();
                     break;
 
                 case '\\':
@@ -160,6 +197,7 @@ class Tokenizer {
                     }
                     else {
                         String unescaped = unescapeCharacter(c);
+                        c = nextRawChar();
                         builder.append(unescaped);
                     }
                     break;
@@ -267,6 +305,7 @@ class Tokenizer {
         }
     }
 
+
     /**
      * 1979-05-27T07:32:00Z
      * 1979-05-27T00:32:00-07:00
@@ -275,39 +314,56 @@ class Tokenizer {
      * @return
      */
     private Token parseDateToken(String group) {
-        String pattern;
-        switch(group.length()) {
-            case 20:
-                group = group.replace("Z","+0000"); //SimpleDateFormat does not allow Z to be included instead of a timezone, see http://stackoverflow.com/a/2202300/777203
-                pattern = "yyyy-MM-dd'T'HH:mm:ssZ";
-                break;
-            case 25:
-                pattern = "yyyy-MM-dd'T'HH:mm:ssX";
-                break;
-            case 32:
-                pattern = "yyyy-MM-dd'T'HH:mm:ss'.'SSSSSSX";
-                break;
-            default: throw new ParseException("Bad date format:"+group);
+        Matcher matcher = DATE_PATTERN.matcher(group);
+        matcher.find();
+        String datetimeStr = matcher.group(DATE_PATTERN_GROUP_DATETIME);
+        String tz = matcher.group(DATE_PATTERN_GROUP_TZ);
+        if(tz.equals("Z")) {
+            tz = "+0000";  //SimpleDateFormat does not allow Z to be included instead of a timezone, see http://stackoverflow.com/a/2202300/777203
         }
+        if(tz.indexOf(':')!= -1) {
+            //Again, Java 1.5 SimpleDateFormat is rather limited with its understanding of Timezone formats. 'X' isn't available yet.
+            tz = tz.replaceAll(":","");
+        }
+        String fractionStr = matcher.group(DATE_PATTERN_GROUP_FRACTION);
 
-        SimpleDateFormat parser = new SimpleDateFormat(pattern);
+        SimpleDateFormat parser = new SimpleDateFormat(DATETIME_FORMAT);
         try {
-            Date date = parser.parse(group);
+            String fullDate = datetimeStr + tz;
+            Date date = parser.parse(fullDate);
+            if(fractionStr != null) {
+                //So, if we got ".1" that's actually 100,000,000 nanos.
+                fractionStr = String.format("%-"+DATE_FRACTION_PERCISION+"s",fractionStr).replace(' ','0');
+                long fractional = Integer.parseInt(fractionStr);
+                int millies = (int)((fractional*1000)/DATE_FRACTION_MAX);
+                date = new Date(date.getTime()+millies);
+            }
             return ValuedToken.dateToken(date);
         } catch (java.text.ParseException e) {
             throw new ParseException("Couldn't parse date "+group, e);
         }
     }
+
     private Token parseFloatToken(String group) {
+        if(group.charAt(0) == '+') {
+            group = group.substring(1);
+        }
+        group = group.replaceAll("_","");
         return ValuedToken.floatToken(Double.valueOf(group));
     }
     private Token parseIntegerToken(String group) {
+        if(group.charAt(0) == '+') {
+            group = group.substring(1);
+        }
+        group = group.replaceAll("_","");
         return ValuedToken.integerToken(Long.valueOf(group));
     }
 
-    private Token parseNext() throws IOException {
+    private Token tryParseNext() throws IOException {
         if(!chars.hasNext() || chars.nextIfEquals(COMMENT_START)) {
-            nextRawLine();
+            if(hasNext()) {
+                nextRawLine();
+            }
             return SymbolToken.Newline; //Always adding a new line for the last line.
         }
         if(Character.isWhitespace(chars.peek())) {
@@ -337,12 +393,6 @@ class Tokenizer {
             return parseLiteralString();
         }
 
-        char peek = chars.peek();
-        SymbolToken symbol = SymbolToken.getSymbolToken(peek);
-        if(symbol != null) {
-            chars.next();
-            return symbol;
-        }
 
         if(chars.nextIfSeqEquals("true")) {
             return ValuedToken.booleanToken(true);
@@ -352,18 +402,24 @@ class Tokenizer {
         }
 
         String match;
-        if(Character.isDigit(peek)) { //tiny tweak, begin with numbers:.
-            if((match = chars.nextIfMatches(DATE_PATTERN)) != null) {
-                return parseDateToken(match);
-            }
-            if((match = chars.nextIfMatches(FLOAT_PATTERN)) != null) {
-                return parseFloatToken(match);
-            }
-            //This has the assumption keys never start with a digit.
-            if((match = chars.nextIfMatches(INTEGER_PATTERN)) != null) {
-                return parseIntegerToken(match);
-            }
+        if((match = chars.nextIfMatches(DATE_PATTERN)) != null) {
+            return parseDateToken(match);
         }
+        if((match = chars.nextIfMatches(FLOAT_PATTERN)) != null) {
+            return parseFloatToken(match);
+        }
+        //This has the assumption keys never start with a digit.
+        if((match = chars.nextIfMatches(INTEGER_PATTERN)) != null) {
+            return parseIntegerToken(match);
+        }
+
+        char peek = chars.peek();
+        SymbolToken symbol = SymbolToken.getSymbolToken(peek);
+        if(symbol != null) {
+            chars.next();
+            return symbol;
+        }
+
         if((match = chars.nextIfMatches(KEY_PATTERN)) != null) {
             return ValuedToken.key(match);
         }

@@ -60,6 +60,9 @@ public class TomlTable extends HashMap<String, Object> {
 	public List<?> getList(String name, Object... keys) throws ClassCastException {
 		return (List<?>) get(name, keys);
 	}
+    public List<TomlTable> getArrayTable(String name, Object... keys) throws ClassCastException {
+		return (List<TomlTable>) get(name, keys);
+	}
 	public Boolean getBoolean(String name, Object... keys) throws ClassCastException {
 		return (Boolean) get(name, keys);
 	}

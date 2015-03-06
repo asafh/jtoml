@@ -2,9 +2,6 @@ package io.ous.jtoml.impl;
 
 import io.ous.jtoml.ParseException;
 import io.ous.jtoml.Toml;
-import io.ous.jtoml.impl.SymbolToken;
-import io.ous.jtoml.impl.Token;
-import io.ous.jtoml.impl.ValuedToken;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -13,69 +10,25 @@ import java.util.List;
 
 public class Parser {
 	//Members:
-	private final TokensAdvancedIterator parsedTokens;
+	private final Tokenizer parsedTokens;
 	private final TomlTable output;
-	private TomlTable currentTomlTable;
+//	private TomlTable currentTomlTable;
 	
 
 	public Parser(Reader reader) throws IOException {
 		this(reader,new Toml());
 	}
-    private static class TokensAdvancedIterator extends AdvancedIterator<Tokenizer.ParsedToken, List<Tokenizer.ParsedToken>> {
 
-        private final List<Tokenizer.ParsedToken> parsedTokenList;
-
-        public TokensAdvancedIterator(List<Tokenizer.ParsedToken> parsedTokenList) {
-            if(parsedTokenList == null) {
-                throw new NullPointerException();
-            }
-            this.parsedTokenList = parsedTokenList;
-        }
-
-        @Override
-        public int length() {
-            return parsedTokenList.size();
-        }
-
-        @Override
-        public int length(List<Tokenizer.ParsedToken> seq) {
-            return seq.size();
-        }
-
-        @Override
-        public Tokenizer.ParsedToken peek() {
-            return parsedTokenList.get(at);
-        }
-
-        @Override
-        public List<Tokenizer.ParsedToken> peek(int count) {
-            return parsedTokenList.subList(at,at+count);
-        }
-        protected boolean matches(SymbolToken symbol, Tokenizer.ParsedToken ptoken) {
-            return ptoken.token == symbol;
-        }
-
-        public boolean peekIfMatch(SymbolToken symbol) {
-            return matches(symbol, peek());
-        }
-        public boolean nextIfMatch(SymbolToken symbol) {
-            if(matches(symbol, peek())) {
-                next();
-                return true;
-            }
-            return false;
-        }
-    }
 
 	public Parser(Reader reader, TomlTable toml) throws IOException {
-        final List<Tokenizer.ParsedToken> parsedTokenList = Tokenizer.parse(reader);
-        this.parsedTokens = new TokensAdvancedIterator(parsedTokenList);
+        this.parsedTokens = Tokenizer.parse(reader);
 
 		this.output = toml;
-		this.currentTomlTable = toml;
+//		this.currentTomlTable = toml;
 	}
 
 	public TomlTable parse() {
+        TomlTable currentTomlTable = output;
         while(parsedTokens.hasNext()) {
             Token token = parsedTokens.peek().token;
             //We can either have an empty line, the beginning of a
@@ -85,14 +38,14 @@ public class Parser {
             else if(token == SymbolToken.SquareLeft) {
                 parsedTokens.next();
                 if(parsedTokens.nextIfMatch(SymbolToken.SquareLeft) ) {
-                    onArrayTable();
+                    currentTomlTable = onArrayTable();
                 }
                 else {
-                    onTable();
+                    currentTomlTable = onTable();
                 }
             }
             else if(token.getType() == Token.TokenType.Key || token.getType() == Token.TokenType.BasicString) {
-                onAssignment();
+                onAssignment(currentTomlTable);
                 if(!parsedTokens.nextIfMatch(SymbolToken.Newline)) {
                     throw new ParseException("Newline expected after assignment");
                 }
@@ -102,7 +55,7 @@ public class Parser {
 	}
 
 
-    private void onAssignment() {
+    private void onAssignment(TomlTable currentTomlTable) {
         List<String> parts = readKeyParts(SymbolToken.Equals);
         String name = parts.remove(parts.size()-1);
         TomlTable createIn = travelIn(currentTomlTable, parts);//Key names are relative to the current table.
@@ -156,7 +109,7 @@ public class Parser {
             return ret;
         }
         while(true) {
-            onAssignment();
+            onAssignment(ret);
             if(parsedTokens.nextIfMatch(SymbolToken.Comma) ) {
                 continue;
             }
@@ -208,8 +161,8 @@ public class Parser {
         return parts;
     }
 
-    private void diveFromRoot(List<String> names) {
-        currentTomlTable = travelIn(output, names); //Table names are absolute, not relative
+    private TomlTable diveFromRoot(List<String> names) {
+        return travelIn(output, names); //Table names are absolute, not relative
     }
     private TomlTable travelIn(TomlTable start, List<String> names) {
         TomlTable current = start;
@@ -244,27 +197,29 @@ public class Parser {
         return current;
     }
 
-	private void onTable() {
+	private TomlTable onTable() {
         List<String> parts = readKeyParts(SymbolToken.SquareRight);
-        diveFromRoot(parts);
+        return diveFromRoot(parts);
 	}
-    private void onArrayTable() {
+    private TomlTable onArrayTable() {
         List<String> parts = readKeyParts(SymbolToken.SquareRight);
         if(!parsedTokens.nextIfMatch(SymbolToken.SquareRight)) { //checking for second end.
             throw new ParseException("Array table must end with ]]");
         }
 
         String tableName = parts.remove(parts.size()-1);
-        diveFromRoot(parts); //Table array names are absolute, not relative
+        TomlTable currentTomlTable = diveFromRoot(parts); //Table array names are absolute, not relative
 
-        List<TomlTable> tableArray = (List<TomlTable>) currentTomlTable.getList(tableName);
+        List tableArray = currentTomlTable.getList(tableName);
         if(tableArray == null) {
             tableArray = new ArrayList<TomlTable>();
+            currentTomlTable.put(tableName, tableArray);
         }
         else if(!tableArray.isEmpty() && !(tableArray.get(0) instanceof  TomlTable)) {
             throw new ParseException("Cannot add TableArray to an existing Array of other value type.");
         }
         currentTomlTable = new TomlTable();
         tableArray.add(currentTomlTable);
+        return currentTomlTable;
     }
 }
