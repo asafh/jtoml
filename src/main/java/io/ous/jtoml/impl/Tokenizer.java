@@ -96,8 +96,12 @@ class Tokenizer {
         nextRawLine();
     }
     private ParsedToken current = null;
+    private ParsedToken last = null;
     public Tokenizer.ParsedToken peek() {
-        return current == null ? current = next() : current;
+        return last = (current == null ? current = next() : current);
+    }
+    public ParsedToken lastSeen() {
+        return last;
     }
     public boolean hasNext() {
         return chars.hasNext() || !eof;
@@ -110,23 +114,23 @@ class Tokenizer {
             try {
                 Token token = tryParseNext();
                 if(token != null) {
-                    return new ParsedToken(token, lineIndex,charIndex);
+                    return last = new ParsedToken(token, lineIndex, charIndex);
                 }
                 else {
-                    return next();
+                    return last = next();
                 }
             }
             catch(NoSuchElementException e) {
-                throw error(lineIndex, charIndex, "Unexpected end of line", e);
+                throw error("Unexpected end of line", e);
             }
-            catch(IOException iox) {
-                throw error(lineIndex, charIndex, "Unexpected IO Exception", iox);
+            catch(Exception e) {
+                throw error("Unexpected Exception", e);
             }
         }
         else {
             ParsedToken ret = current;
             current = null;
-            return ret;
+            return last = ret;
         }
     }
 
@@ -145,13 +149,16 @@ class Tokenizer {
         return false;
     }
 
-    private ParseException error(int lineIndex, int charIndex, String s, Exception e) throws ParseException {
-        return new ParseException(s+" at "+lineIndex+":"+charIndex, e);
+    ParseException error(String s) {
+        return new ParseException(s, currentLine, chars.currentIndex());
+    }
+    ParseException error(String s,  Exception e) {
+        return new ParseException(s, currentLine, chars.currentIndex(), e);
     }
 
     private void nextRawLine() throws IOException {
         if(eof) {
-            throw error(currentLine, 0, "Unexpected end of file", null);
+            throw error("Unexpected end of file");
         }
         currentLine++;
         String line = reader.readLine();
@@ -240,7 +247,7 @@ class Tokenizer {
 
             }
         }
-        throw new ParseException("No ending quote for basic string.");
+        throw new ParseException("No ending quote for basic string.",currentLine,chars.currentIndex());
     }
 
     private String unescapeCharacter(char escaped) {
@@ -267,7 +274,7 @@ class Tokenizer {
                 unicode = chars.next(4);
                 break;
             default:
-                throw new ParseException("Reserved escaped character '"+escaped+"'");
+                throw error("Reserved escaped character '" + escaped + "'");
 
         }
         try {
@@ -275,10 +282,12 @@ class Tokenizer {
             return new String(Character.toChars(code));
         }
         catch(NumberFormatException nfe) {
-            throw new ParseException("Bad escape code "+unicode);
+            throw error("Bad escape code "+unicode);
         }
 
     }
+
+
 
     private Token parseLiteralString() {
         StringBuilder builder = new StringBuilder();
@@ -291,7 +300,7 @@ class Tokenizer {
                 builder.append(c);
             }
         }
-        throw new ParseException("No ending single quote for literal string.");
+        throw error("No ending single quote for literal string.");
     }
     private Token parseMultilineLiteralString() throws IOException {
         StringBuilder builder = new StringBuilder();
@@ -340,7 +349,7 @@ class Tokenizer {
             }
             return ValuedToken.dateToken(date);
         } catch (java.text.ParseException e) {
-            throw new ParseException("Couldn't parse date "+group, e);
+            throw error("Couldn't parse date "+group, e);
         }
     }
 
@@ -424,6 +433,6 @@ class Tokenizer {
             return ValuedToken.key(match);
         }
 
-        throw new ParseException("Unexpected input: "+chars.peekAll());
+        throw error("Unexpected input: "+chars.peekAll());
     }
 }
