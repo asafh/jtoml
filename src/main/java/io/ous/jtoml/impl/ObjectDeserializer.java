@@ -1,5 +1,7 @@
 package io.ous.jtoml.impl;
 
+import io.ous.jtoml.TomlTable;
+
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Date;

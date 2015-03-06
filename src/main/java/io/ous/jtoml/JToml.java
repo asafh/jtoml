@@ -1,7 +1,6 @@
 package io.ous.jtoml;
 
 import io.ous.jtoml.impl.Parser;
-import io.ous.jtoml.impl.TomlTable;
 
 import java.io.File;
 import java.io.FileInputStream;

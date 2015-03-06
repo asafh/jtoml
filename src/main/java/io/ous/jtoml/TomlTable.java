@@ -1,4 +1,6 @@
-package io.ous.jtoml.impl;
+package io.ous.jtoml;
+
+import io.ous.jtoml.impl.ObjectDeserializer;
 
 import java.util.Collections;
 import java.util.Date;
@@ -80,7 +82,7 @@ public class TomlTable extends HashMap<String, Object> {
      * @param <T>
      * @return
      * @throws IllegalArgumentException if the value is neither of type String or Integer
-     * @see ObjectDeserializer#toEnum(Class, Object)
+     * @see io.ous.jtoml.impl.ObjectDeserializer#toEnum(Class, Object)
      */
     public <T extends Enum<T>> T getAsEnum(Class<T> type, String name, Object... keys) {
         Object value = get(name, keys);

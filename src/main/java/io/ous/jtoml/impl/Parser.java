@@ -2,6 +2,7 @@ package io.ous.jtoml.impl;
 
 import io.ous.jtoml.ParseException;
 import io.ous.jtoml.Toml;
+import io.ous.jtoml.TomlTable;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -12,8 +13,6 @@ public class Parser {
 	//Members:
 	private final Tokenizer parsedTokens;
 	private final TomlTable output;
-//	private TomlTable currentTomlTable;
-	
 
 	public Parser(Reader reader) throws IOException {
 		this(reader,new Toml());

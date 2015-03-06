@@ -3,8 +3,6 @@ package io.ous.jtoml;
 import java.io.IOException;
 import java.util.*;
 
-import io.ous.jtoml.impl.TomlTable;
-import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.junit.Assert;
@@ -60,8 +58,8 @@ public class SpecificationTest {
                 "The quick brown \\\n" +
                 "\n" +
                 "\n" +
-                "  fox jumps over \\\n" +
-                "    the lazy dog.\"\"\"\n" +
+                "  fox jumps \"over \\\n" +
+                "    the \"\"lazy dog.\"\"\"\n" +
                 "\n" +
                 "key3 = \"\"\"\\\n" +
                 "       The quick brown \\\n" +
@@ -70,7 +68,7 @@ public class SpecificationTest {
                 "       \"\"\"");
 
         Assert.assertEquals("The quick brown fox jumps over the lazy dog.", toml.get("key1"));
-        Assert.assertEquals("The quick brown fox jumps over the lazy dog.", toml.get("key2"));
+        Assert.assertEquals("The quick brown fox jumps \"over the \"\"lazy dog.", toml.get("key2"));
         Assert.assertEquals("The quick brown fox\t jumps over the lazy dog.", toml.get("key3"));
     }
     @Test
@@ -216,7 +214,7 @@ public class SpecificationTest {
                 "# both\n" +
                 ",6.626e-34]");
 
-        Assert.assertEquals(Utils.createList(1.0, 3.1415, -0.01, 4.9999999999999996E22, 1000000.0, -0.02, 6.626E-34),toml.getList("v"));
+        Assert.assertEquals(Utils.createList(1.0, 3.1415, -0.01, 4.9999999999999996E22, 1000000.0, -0.02, 6.626E-34), toml.getList("v"));
     }
     @Test
     public void testIntegers() {
