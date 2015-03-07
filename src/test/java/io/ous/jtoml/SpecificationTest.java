@@ -223,17 +223,15 @@ public class SpecificationTest {
         Assert.assertEquals(Utils.createList(1.0, 3.1415, -0.01, 4.9999999999999996E22, 1000000.0, -0.02, 6.626E-34), toml.getList("v"));
     }
     @Test
-    public void testIntegers() {
-        Toml toml = JToml.parseString("" +
+    public void testIntegers() throws IOException {
+        JSONtest("" +
                 "v=[1_000,\n" +
                 "5_349_221,\n" +
                 "1_2_3_4_5,     # valid but inadvisable\n" +
                 "+99,\n" +
                 "42," +
                 "0,\n" +
-                "-17]");
-
-        Assert.assertEquals(tomlfy(Utils.createList(1000, 5349221, 12345, 99, 42, 0, -17)), toml.getList("v"));
+                "-17]", "{ \"v\": [1000, 5349221, 12345, 99, 42, 0, -17]}");
     }
 
     @Test
@@ -281,47 +279,16 @@ public class SpecificationTest {
 
     }
 
-    /**
-     * Replaces Integers with Longs, Floats with Doubles, recursive.
-     * @param o
-     * @return
-     */
-    private Object tomlfy(Object o) {
-        if(o != null) {
-            if(o instanceof List) {
-                List list = (List) o;
-                List<Object> ret = new ArrayList<Object>(list.size());
-                for(Object value : list) {
-                    ret.add(tomlfy(value));
-                }
-                return ret;
-            }
-            if(o instanceof Map) {
-                Map<String, Object> map = (Map) o;
-                Map ret = new HashMap();
-                for(Map.Entry entry : map.entrySet()) {
-                    ret.put(entry.getKey(), tomlfy(entry.getValue()));
-                }
-                return ret;
-            }
-            if(o instanceof Float) {
-                return new Double((Float)o);
-            }
-            if(o instanceof Integer) {
-                return new Long((Integer)o);
-            }
-        }
-        return o;
-    }
 
-
-    private void JSONtest(String tomlStr, String json) throws IOException {
+    private void JSONtest(String tomlStr, String expectedJSON) throws IOException {
         Toml toml = JToml.parseString(tomlStr);
         ObjectMapper mapper = new ObjectMapper();
-        Map<String,Object> expected = mapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+        String asJSON = mapper.writeValueAsString(toml);
+        //Normalizing it to JSON datatypes, avoid falses on Integer != Long.
+        Map<String, Object> asNormalizedMap = mapper.readValue(asJSON, new TypeReference<Map<String, Object>>() {});
 
-
-        Assert.assertEquals(tomlfy(expected), toml);
+        Map<String,Object> expected = mapper.readValue(expectedJSON, new TypeReference<Map<String, Object>>() {});
+        Assert.assertEquals(expected, asNormalizedMap);
     }
 
     @Test
