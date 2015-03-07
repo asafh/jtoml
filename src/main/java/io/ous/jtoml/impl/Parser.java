@@ -50,6 +50,9 @@ public class Parser {
                         throw error("Newline expected after assignment");
                     }
                 }
+                else {
+                    throw error("Unexpected token "+token);
+                }
             }
             catch(ParseException pe) {
                 throw pe;
@@ -96,7 +99,7 @@ public class Parser {
                 type = currentType;
             }
             else if(!type.equals(currentType)) {
-                throw error("Array types must be equal, "+type.getName()+"!="+currentType.getName());
+                throw error("Mixing types in array is disallowed, "+type.getName()+"!="+currentType.getName());
             }
             ret.add(value);
             removeNewlines(); //arrays can have new lines after values
@@ -104,7 +107,10 @@ public class Parser {
                 removeNewlines(); //arrays can have new lines after commas
                 continue;
             }
-            if(parsedTokens.nextIfMatch(SymbolToken.SquareRight) ) {
+            else if(!parsedTokens.nextIfMatch(SymbolToken.SquareRight) ) {
+                throw error("Unexpected token "+parsedTokens.peek()+" between array values");
+            }
+            else {
                 break;
             }
         }
@@ -207,7 +213,14 @@ public class Parser {
 
 	private TomlTable onTable() {
         List<String> parts = readKeyParts(SymbolToken.SquareRight);
-        return diveFromRoot(parts);
+        String last = parts.remove(parts.size()-1);
+        TomlTable in = diveFromRoot(parts);
+        if(in.containsKey(last)) {
+            throw error("Cannot overwrite existing value '"+last+"' with atable");
+        }
+        TomlTable value = new TomlTable();
+        in.put(last, value);
+        return value;
 	}
     private TomlTable onArrayTable() {
         List<String> parts = readKeyParts(SymbolToken.SquareRight);

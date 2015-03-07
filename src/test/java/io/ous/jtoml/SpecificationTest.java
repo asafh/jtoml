@@ -126,6 +126,12 @@ public class SpecificationTest {
 		Assert.assertEquals("C:\\Users\\nodejs\\templates", toml.getValue("right"));
 		toml = JToml.parseString("wrong = \"C:\\Users\\nodejs\\templates\"");
 	}
+    @Test(expected = ParseException.class)
+    public void testMixedTypes() throws IOException {
+        // wrong = "C:\Users\nodejs\templates" # note: doesn't produce a valid path
+        // right = "C:\\Users\\nodejs\\templates"
+        Toml toml = JToml.parseString("right = [1,'a']");
+    }
 	
 	@Test(expected = ParseException.class) //Parse exception
 	public void testOverwritePreviousKey() throws IOException {
