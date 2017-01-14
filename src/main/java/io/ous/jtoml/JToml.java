@@ -27,9 +27,12 @@ public class JToml {
         } catch (IOException ex) {
             throw new IllegalStateException("StringReader should never throw an IOException",ex);
         }
+
     }
     
     public static Toml parse(Reader reader) throws IOException {
-    	return new Parser(reader).parse();   	
+        Toml ret = new Toml();
+    	new Parser(reader, ret).parse();
+        return ret;
     }
 }

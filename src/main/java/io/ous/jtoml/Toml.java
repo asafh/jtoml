@@ -1,13 +1,11 @@
 package io.ous.jtoml;
 
-import io.ous.jtoml.impl.KeyGroup;
-
 /**
- * The root Keygroup, a Toml configuration file
+ * The root TomlTable, a Toml configuration file
  * @author Asafh
  */
-public class Toml extends KeyGroup {
+public class Toml extends TomlTable {
 	public Toml() {
-		super(null, "");
+		super();
 	}
 }

@@ -1,12 +1,10 @@
 package io.ous.jtoml;
 
-import io.ous.jtoml.impl.KeyGroup;
-
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,6 +17,82 @@ import org.junit.Test;
 
 public class SpecificationTest {
 	@Test
+	public void testDates() throws IOException, java.text.ParseException {
+		Toml toml = JToml.parseString("dates=[1979-05-27T07:32:00Z,\n" +
+                "1979-05-27T00:32:00-07:00, " +
+                "1979-05-27T00:32:00.999999-07:00]");
+        List found = toml.getList("dates");
+
+        Date last = Utils.createCalendar("1979-05-27-07:32:00-0000");
+        last.setTime(last.getTime()+999);
+        Assert.assertEquals(Utils.createList(
+                Utils.createCalendar("1979-05-27-07:32:00-0000"),
+                Utils.createCalendar("1979-05-27-07:32:00-0000"),
+                last)
+
+        , found);
+
+    }
+    @Test
+	public void testBasicString() throws IOException, java.text.ParseException {
+		Toml toml = JToml.parseString("str=\"I'm a string. \\\"You can quote me\\\". Name\\tJos\\u00E9\\nLocation\\tSF.\"\n");
+        Assert.assertEquals("I'm a string. \"You can quote me\". Name\tJos\u00E9\nLocation\tSF.", toml.get("str"));
+    }
+	@Test
+	public void testLiteralString2() throws IOException {
+		Toml toml = JToml.parseString("foo = 'Hello\\tWorld\\nI am having \\\"!'");
+		Assert.assertEquals("Hello\\tWorld\\nI am having \\\"!", toml.getString("foo"));
+	}
+    @Test
+    public void testLiteralString() throws IOException, java.text.ParseException {
+        Toml toml = JToml.parseString("winpath  = 'C:\\Users\\nodejs\\templates'\n" +
+                "winpath2 = '\\\\ServerX\\admin$\\system32\\'\n" +
+                "quoted   = 'Tom \"Dubs\" Preston-Werner'\n" +
+                "regex    = '<\\i\\c*\\s*>'");
+        Assert.assertEquals("C:\\Users\\nodejs\\templates", toml.get("winpath"));
+        Assert.assertEquals("\\\\ServerX\\admin$\\system32\\", toml.get("winpath2"));
+        Assert.assertEquals("Tom \"Dubs\" Preston-Werner", toml.get("quoted"));
+        Assert.assertEquals("<\\i\\c*\\s*>", toml.get("regex"));
+    }
+
+    @Test
+    public void testMultilineString() throws IOException, java.text.ParseException {
+        Toml toml = JToml.parseString("key1 = \"The quick brown fox jumps over the lazy dog.\"\n" +
+                "\n" +
+                "key2 = \"\"\"\n" +
+                "The quick brown \\\n" +
+                "\n" +
+                "\n" +
+                "  fox jumps \"over \\\n" +
+                "    the \"\"lazy dog.\"\"\"\n" +
+                "\n" +
+                "key3 = \"\"\"\\\n" +
+                "       The quick brown \\\n" +
+                "       fox\\t jumps over \\\n" +
+                "       the lazy dog.\\\n" +
+                "       \"\"\"");
+
+        Assert.assertEquals("The quick brown fox jumps over the lazy dog.", toml.get("key1"));
+        Assert.assertEquals("The quick brown fox jumps \"over the \"\"lazy dog.", toml.get("key2"));
+        Assert.assertEquals("The quick brown fox\t jumps over the lazy dog.", toml.get("key3"));
+    }
+    @Test
+    public void testLiteralMultilineString() throws IOException, java.text.ParseException {
+        Toml toml = JToml.parseString("regex2 = '''I [dw]on't need \\d{2} apples'''\n" +
+                "lines  = '''\n" +
+                "The first newline is\n" +
+                "trimmed in raw strings.\n" +
+                "   All other whitespace\n" +
+                "   is preserved.\n" +
+                "'''");
+        Assert.assertEquals("I [dw]on't need \\d{2} apples", toml.get("regex2"));
+        Assert.assertEquals("The first newline is\n" +
+                "trimmed in raw strings.\n" +
+                "   All other whitespace\n" +
+                "   is preserved.\n", toml.get("lines"));
+    }
+
+    @Test
 	public void testInteger() throws IOException {
 		Toml toml = JToml.parseString("foo = 42");
 		Assert.assertEquals(42L, toml.getLong("foo").longValue());
@@ -43,6 +117,7 @@ public class SpecificationTest {
 		Assert.assertEquals("Hello\tWorld\nI'm having \"!", toml.getString("foo"));
 	}
 
+
 	@Test
 	public void testArray() throws IOException {
 		Toml toml = JToml.parseString("foo = [\n\"Hello\",\n\n\t \"World\"\n,\"Nice\"]");
@@ -57,6 +132,12 @@ public class SpecificationTest {
 		Assert.assertEquals("C:\\Users\\nodejs\\templates", toml.getValue("right"));
 		toml = JToml.parseString("wrong = \"C:\\Users\\nodejs\\templates\"");
 	}
+    @Test(expected = ParseException.class)
+    public void testMixedTypes() throws IOException {
+        // wrong = "C:\Users\nodejs\templates" # note: doesn't produce a valid path
+        // right = "C:\\Users\\nodejs\\templates"
+        Toml toml = JToml.parseString("right = [1,'a']");
+    }
 	
 	@Test(expected = ParseException.class) //Parse exception
 	public void testOverwritePreviousKey() throws IOException {
@@ -84,7 +165,7 @@ public class SpecificationTest {
 	@Test
 	public void testLocalsAsMap() throws IOException {
 		Toml toml = JToml.parseString("[foo]\nbar = true\nbaz = false");
-		Map<String, Object> map = toml.getKeyGroup("foo").localsAsMap();
+		Map<String, Object> map = toml.getTomlTable("foo").toMap();
 		Assert.assertTrue(map.containsKey("bar") && map.get("bar").equals(Boolean.TRUE));
 		Assert.assertTrue(map.containsKey("baz") && map.get("baz").equals(Boolean.FALSE));
 	}
@@ -93,17 +174,19 @@ public class SpecificationTest {
 		Toml toml = JToml.parseString("x=\"A\"\n[foo]\nbar = true\nbaz = false");
 		
 		Map<String, Object> map = toml.toMap();
-		Assert.assertTrue(map.containsKey("foo") && ((KeyGroup) map.get("foo")).getName().equals("foo"));
-		
-		Assert.assertTrue(map.containsKey("foo.bar") && map.get("foo.bar").equals(Boolean.TRUE));
-		Assert.assertTrue(map.containsKey("foo.baz") && map.get("foo.baz").equals(Boolean.FALSE));
+
+        Assert.assertTrue(map.get("foo") instanceof Map);
+
+        Map<String, Object> foo = (Map<String, Object>) map.get("foo");
+        Assert.assertEquals(Boolean.TRUE, foo.get("bar"));
+        Assert.assertEquals(Boolean.FALSE, foo.get("baz"));
 	}
 
 	@Test
 	public void testCustomObject() throws IOException {
 		Toml toml = JToml.parseString("[foo]\nstringKey=\"a\"\nlongKey=42\ndoubleKey=13.37\n" + //
 				"booleanKey=true\nlistKey=[1,2,3]\n[foo.bar]\nbazz=\"Hello\"\ndummy=459\neVal=\"Lorem\"");
-		Foo foo = toml.getKeyGroup("foo").asObject(Foo.class);
+		Foo foo = toml.getTomlTable("foo").asObject(Foo.class);
 		Assert.assertEquals("a", foo.stringKey);
 		Assert.assertEquals(Long.valueOf(42), foo.longKey);
 		Assert.assertEquals(Double.valueOf(13.37), foo.doubleKey, 0.00001d);
@@ -120,6 +203,145 @@ public class SpecificationTest {
 				"booleanKey=true\nlistKey=[1,2,3]\n[bar]\nbazz=\"Hello\"\ndummy=459");
 		Assert.assertEquals(foo.toString(), toml.asObject(Foo.class).toString());
 	}
+    @Test
+    public void testInlineTable() throws IOException {
+        Toml toml = JToml.parseString("[foo]\nname = { first = \"Tom\", last = \"Preston-Werner\" }\n");
+        TomlTable foo = toml.getTomlTable("foo", "name");
+        Assert.assertEquals("Tom",foo.get("first"));
+        Assert.assertEquals("Preston-Werner",foo.get("last"));
+    }
+
+    @Test
+    public void testFloats() {
+        Toml toml = JToml.parseString("# fractional\n" +
+                "v=[+1.0\n" +
+                ",3.1415\n" +
+                ",-0.01\n" +
+                "\n" +
+                "# exponent\n" +
+                ",5e+22\n" +
+                ",1e6\n" +
+                ",-2E-2\n" +
+                "\n" +
+                "# both\n" +
+                ",6.626e-34]");
+
+        Assert.assertEquals(Utils.createList(1.0, 3.1415, -0.01, 4.9999999999999996E22, 1000000.0, -0.02, 6.626E-34), toml.getList("v"));
+    }
+    @Test
+    public void testIntegers() throws IOException {
+        JSONtest("" +
+                "v=[1_000,\n" +
+                "5_349_221,\n" +
+                "1_2_3_4_5,     # valid but inadvisable\n" +
+                "+99,\n" +
+                "42," +
+                "0,\n" +
+                "-17]", "{ \"v\": [1000, 5349221, 12345, 99, 42, 0, -17]}");
+    }
+
+    @Test
+    public void testArrayTable() throws IOException {
+        JSONtest("[[products]]\n" +
+                "name = \"Hammer\"\n" +
+                "sku = 738594937\n" +
+                "\n" +
+                "[[products]]\n" +
+                "\n" +
+                "[[products]]\n" +
+                "name = \"Nail\"\n" +
+                "sku = 284758393\n" +
+                "color = \"gray\"",
+                "{\n" +
+                        "  \"products\": [\n" +
+                        "    { \"name\": \"Hammer\", \"sku\": 738594937 },\n" +
+                        "    { },\n" +
+                        "    { \"name\": \"Nail\", \"sku\": 284758393, \"color\": \"gray\" }\n" +
+                        "  ]\n" +
+                        "}");
+
+    }
+    @Test
+    public void testKeyNames() throws IOException {
+        JSONtest("[a  . \"table.tater\"]\n" +
+                "key = 1\n" +
+                "bare_key = 1\n" +
+                "bare-key = 1\n" +
+                "\n" +
+                "\"127.0.0.1\" = 1\n" +
+                "\"character encoding\" = 1\n" +
+                "\"ʎǝʞ\" = 1",
+                "{\"a\":{\n" +
+                        "  \"table.tater\": {\n" +
+                        "\"key\": 1,\n" +
+                        "\"bare_key\": 1,\n" +
+                        "\"bare-key\": 1,\n" +
+                        "\n" +
+                        "\"127.0.0.1\": 1,\n" +
+                        "\"character encoding\": 1,\n" +
+                        "\"ʎǝʞ\": 1" +
+                        "  }\n" +
+                        "}}");
+
+    }
+
+
+    private void JSONtest(String tomlStr, String expectedJSON) throws IOException {
+        Toml toml = JToml.parseString(tomlStr);
+        ObjectMapper mapper = new ObjectMapper();
+        String asJSON = mapper.writeValueAsString(toml);
+        //Normalizing it to JSON datatypes, avoid falses on Integer != Long.
+        Map<String, Object> asNormalizedMap = mapper.readValue(asJSON, new TypeReference<Map<String, Object>>() {});
+
+        Map<String,Object> expected = mapper.readValue(expectedJSON, new TypeReference<Map<String, Object>>() {});
+        Assert.assertEquals(expected, asNormalizedMap);
+    }
+
+    @Test
+    public void testNestedArrayTable() throws IOException {
+        JSONtest("[[fruit]]\n" +
+                "  name = \"apple\"\n" +
+                "\n" +
+                "  [fruit.physical]\n" +
+                "    color = \"red\"\n" +
+                "    shape = \"round\"\n" +
+                "\n" +
+                "  [[fruit.variety]]\n" +
+                "    name = \"red delicious\"\n" +
+                "\n" +
+                "  [[fruit.variety]]\n" +
+                "    name = \"granny smith\"\n" +
+                "\n" +
+                "[[fruit]]\n" +
+                "  name = \"banana\"\n" +
+                "\n" +
+                "  [[fruit.variety]]\n" +
+                "    name = \"plantain\"",
+                "{\n" +
+                        "  \"fruit\": [\n" +
+                        "    {\n" +
+                        "      \"name\": \"apple\",\n" +
+                        "      \"physical\": {\n" +
+                        "        \"color\": \"red\",\n" +
+                        "        \"shape\": \"round\"\n" +
+                        "      },\n" +
+                        "      \"variety\": [\n" +
+                        "        { \"name\": \"red delicious\" },\n" +
+                        "        { \"name\": \"granny smith\" }\n" +
+                        "      ]\n" +
+                        "    },\n" +
+                        "    {\n" +
+                        "      \"name\": \"banana\",\n" +
+                        "      \"variety\": [\n" +
+                        "        { \"name\": \"plantain\" }\n" +
+                        "      ]\n" +
+                        "    }\n" +
+                        "  ]\n" +
+                        "}");
+    }
+
+
+
     public static enum TestEnum {
         Bla,
         Dog,
@@ -131,10 +353,10 @@ public class SpecificationTest {
     public void testEnum() throws IOException {
         Toml toml = JToml.parseString("[foo]\nstringKey=\"Dog\"\nintVal=3");
 
-        TestEnum value = toml.getAsEnum("foo.stringKey", TestEnum.class);
+        TestEnum value = toml.getAsEnum(TestEnum.class, "foo","stringKey");
         Assert.assertEquals(TestEnum.Dog, value);
 
-        TestEnum intVal = toml.getKeyGroup("foo").getLocalAsEnum("intVal", TestEnum.class);
+        TestEnum intVal = toml.getTomlTable("foo").getAsEnum(TestEnum.class, "intVal");
         Assert.assertEquals(TestEnum.values()[3], intVal);
     }
 
