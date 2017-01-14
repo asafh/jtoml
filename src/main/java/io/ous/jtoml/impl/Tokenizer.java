@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 class Tokenizer {
     private static final String BREAK_LINE = System.getProperty("line.separator");
     private static final String LITERAL_MULTILINE_STRING_DELIMITER = "\'\'\'";
+    private static final char LITERAL_STRING_DELIMITER = '\'';
     private static final String MULTILINE_STRING_DELIMITER = "\"\"\"";
     private static final char BASIC_STRING_DELIMITER = '\"';
     private static final char COMMENT_START = '#';
@@ -381,14 +382,14 @@ class Tokenizer {
         }
 
 
-        if(chars.nextIfSeqEquals(MULTILINE_STRING_DELIMITER)) {
+        if(chars.nextIfSeqEquals(MULTILINE_STRING_DELIMITER)) { //Multiline strings start with """
             if(!chars.hasNext()) { //Ignore newline character immediately after """
                 nextRawLine();
             }
             return parseMultilineString();
         }
 
-        if(chars.nextIfEquals(BASIC_STRING_DELIMITER)) {
+        if(chars.nextIfEquals(BASIC_STRING_DELIMITER)) { //Basic strings starts with just "
             return parseBasicString();
         }
         if(chars.nextIfSeqEquals(LITERAL_MULTILINE_STRING_DELIMITER)) {
@@ -397,8 +398,7 @@ class Tokenizer {
             }
             return parseMultilineLiteralString();
         }
-
-        if(chars.nextIfEquals('\'')) {
+        if(chars.nextIfEquals(LITERAL_STRING_DELIMITER)) {
             return parseLiteralString();
         }
 

@@ -46,6 +46,7 @@ public class Parser {
                 }
                 else if(token.getType() == Token.TokenType.Key || token.getType() == Token.TokenType.BasicString) {
                     onAssignment(currentTomlTable);
+
                     if(!parsedTokens.nextIfMatch(SymbolToken.Newline)) {
                         throw error("Newline expected after assignment");
                     }

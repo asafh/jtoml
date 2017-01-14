@@ -38,6 +38,11 @@ public class SpecificationTest {
 		Toml toml = JToml.parseString("str=\"I'm a string. \\\"You can quote me\\\". Name\\tJos\\u00E9\\nLocation\\tSF.\"\n");
         Assert.assertEquals("I'm a string. \"You can quote me\". Name\tJos\u00E9\nLocation\tSF.", toml.get("str"));
     }
+	@Test
+	public void testLiteralString2() throws IOException {
+		Toml toml = JToml.parseString("foo = 'Hello\\tWorld\\nI am having \\\"!'");
+		Assert.assertEquals("Hello\\tWorld\\nI am having \\\"!", toml.getString("foo"));
+	}
     @Test
     public void testLiteralString() throws IOException, java.text.ParseException {
         Toml toml = JToml.parseString("winpath  = 'C:\\Users\\nodejs\\templates'\n" +
@@ -111,6 +116,7 @@ public class SpecificationTest {
 		Toml toml = JToml.parseString("foo = \"Hello\\tWorld\\nI'm having \\\"!\"");
 		Assert.assertEquals("Hello\tWorld\nI'm having \"!", toml.getString("foo"));
 	}
+
 
 	@Test
 	public void testArray() throws IOException {
